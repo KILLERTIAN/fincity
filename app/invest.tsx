@@ -133,7 +133,7 @@ export default function InvestScreen() {
                         </View>
 
                         <Text style={styles.heroLabel}>AVAILABLE TO INVEST</Text>
-                        <Text style={styles.heroAmount}>${(player.money * 0.4).toFixed(2)}</Text>
+                        <Text style={styles.heroAmount}>₹{(player.money * 0.4).toFixed(2)}</Text>
                     </View>
 
                     {/* Missions List */}
@@ -144,7 +144,10 @@ export default function InvestScreen() {
                             <Pressable
                                 key={mission.id}
                                 style={({ pressed }) => [styles.missionCard, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-                                onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    router.push(`/stock-detail?id=${mission.id}`);
+                                }}
                             >
                                 <View style={[styles.missionIconBox, { backgroundColor: mission.bgColor }]}>
                                     <Ionicons name={mission.icon as any} size={28} color={mission.color} />

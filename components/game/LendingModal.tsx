@@ -95,7 +95,7 @@ export const LendingModal: React.FC<LendingModalProps> = ({
                         <View style={styles.inputSection}>
                             <Text style={styles.label}>Amount to Lend</Text>
                             <View style={styles.inputContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                                <Text style={styles.currencySymbol}>₹</Text>
                                 <TextInput
                                     style={styles.input}
                                     value={amount}
@@ -105,7 +105,7 @@ export const LendingModal: React.FC<LendingModalProps> = ({
                                     placeholderTextColor="#AFAFAF"
                                 />
                             </View>
-                            <Text style={styles.maxText}>Max: ${maxAmount.toFixed(2)}</Text>
+                            <Text style={styles.maxText}>Max: ₹{maxAmount.toFixed(2)}</Text>
                         </View>
 
                         {/* Quick Amount Buttons */}
@@ -119,7 +119,7 @@ export const LendingModal: React.FC<LendingModalProps> = ({
                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     }}
                                 >
-                                    <Text style={styles.quickButtonText}>${suggested}</Text>
+                                    <Text style={styles.quickButtonText}>₹{suggested}</Text>
                                 </Pressable>
                             ))}
                         </View>
@@ -133,13 +133,13 @@ export const LendingModal: React.FC<LendingModalProps> = ({
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>They'll Repay</Text>
                                 <Text style={[styles.detailValue, styles.highlight]}>
-                                    ${repaymentAmount.toFixed(2)}
+                                    ₹{repaymentAmount.toFixed(2)}
                                 </Text>
                             </View>
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Your Profit</Text>
                                 <Text style={[styles.detailValue, styles.profit]}>
-                                    +${(repaymentAmount - parseFloat(amount || '0')).toFixed(2)}
+                                    +₹{(repaymentAmount - parseFloat(amount || '0')).toFixed(2)}
                                 </Text>
                             </View>
                         </View>

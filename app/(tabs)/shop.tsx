@@ -11,10 +11,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 const GEM_PACKS = [
-    { id: '1', name: 'Pile of Gems', amount: 100, price: '$0.99', popular: false },
-    { id: '2', name: 'Bag of Gems', amount: 550, price: '$4.99', popular: true },
-    { id: '3', name: 'Chest of Gems', amount: 1200, price: '$9.99', popular: false },
-    { id: '4', name: 'Vault of Gems', amount: 2500, price: '$19.99', popular: false },
+    { id: '1', name: 'Pile of Gems', amount: 100, price: '₹79', popular: false },
+    { id: '2', name: 'Bag of Gems', amount: 550, price: '₹399', popular: true },
+    { id: '3', name: 'Chest of Gems', amount: 1200, price: '₹799', popular: false },
+    { id: '4', name: 'Vault of Gems', amount: 2500, price: '₹1599', popular: false },
 ];
 
 const DAILY_SPECIALS = [

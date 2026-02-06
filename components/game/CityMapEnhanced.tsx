@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Animated,
     Dimensions,
@@ -19,7 +19,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export interface Building {
     id: string;
     name: string;
-    type: 'home' | 'guild' | 'store' | 'market' | 'bank' | 'park' | 'lake' | 'hospital' | 'police' | 'gym' | 'bush' | 'streetlight' | 'car' | 'trafficLight';
+    type: 'home' | 'guild' | 'store' | 'market' | 'bank' | 'park' | 'lake' | 'hospital' | 'police' | 'gym' | 'bush' | 'streetlight' | 'trafficLight';
     icon?: keyof typeof Ionicons.glyphMap;
     color: string;
     gridX: number;
@@ -183,62 +183,7 @@ export const CityMapEnhanced: React.FC<CityMapProps> = ({
         return 'grass';
     };
 
-    const MovingCar: React.FC<{ building: Building; width: number; height: number }> = ({ building, width, height }) => {
-        const [moveAnim] = useState(new Animated.Value(0));
 
-        useEffect(() => {
-            const startMoving = () => {
-                moveAnim.setValue(0);
-                Animated.timing(moveAnim, {
-                    toValue: 1,
-                    duration: 5000 + Math.random() * 3000,
-                    useNativeDriver: false,
-                }).start(() => startMoving());
-            };
-            startMoving();
-        }, []);
-
-        const { x, y } = gridToIso(building.gridX, building.gridY);
-
-        const carX = moveAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [
-                building.direction === 'left' ? x + 300 : building.direction === 'right' ? x - 300 : x,
-                building.direction === 'left' ? x - 300 : building.direction === 'right' ? x + 300 : x
-            ]
-        });
-
-        const carY = moveAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [
-                building.direction === 'up' ? y + 300 : building.direction === 'down' ? y - 300 : y,
-                building.direction === 'up' ? y - 300 : building.direction === 'down' ? y + 300 : y
-            ]
-        });
-
-        return (
-            <Animated.View
-                style={[
-                    styles.building,
-                    {
-                        left: Animated.subtract(carX, width / 2 - TILE_WIDTH / 2),
-                        top: Animated.subtract(carY, height - TILE_HEIGHT / 2 - 5),
-                        width: width,
-                        height: height,
-                        zIndex: 20,
-                    },
-                ]}
-            >
-                <IsometricBuilding
-                    type="car"
-                    width={width}
-                    height={height}
-                    color={building.color}
-                    direction={building.direction}
-                />
-            </Animated.View>
-        );
-    };
 
     const renderIsometricTile = (gridX: number, gridY: number, key: string) => {
         const { x, y } = gridToIso(gridX, gridY);
@@ -340,9 +285,7 @@ export const CityMapEnhanced: React.FC<CityMapProps> = ({
         const buildingWidth = footprintWidth * 1.5;
         const buildingHeight = footprintHeight + (bW * 8); // Taller buildings
 
-        if (building.type === 'car') {
-            return <MovingCar key={building.id} building={building} width={buildingWidth} height={buildingHeight} />;
-        }
+
 
         // Center of the building footprint
         const centerX = building.gridX + bW / 2;

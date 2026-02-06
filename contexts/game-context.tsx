@@ -1,3 +1,4 @@
+import { userApi } from '@/utils/api';
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
 interface Player {
@@ -13,6 +14,8 @@ interface Player {
   streak: number;
   inventory: InventoryItem[];
   gems: number;
+  mood: number;
+  energy: number;
 }
 
 interface InventoryItem {
@@ -130,6 +133,8 @@ interface GameContextType {
   markNotificationRead: (notificationId: string) => void;
   handleNotificationAction: (notificationId: string, action: 'accept' | 'decline') => void;
   purchaseItem: (itemId: string, price: number) => void;
+  updatePlayerStats: (stats: Partial<Pick<Player, 'money' | 'xp' | 'trustScore' | 'level' | 'energy' | 'mood' | 'gems'>>) => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -150,17 +155,19 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>({
     player: {
       id: '1',
-      name: 'KILLERTIAN',
-      money: 124.50,
+      name: 'Loading...',
+      money: 0,
       trustScore: 85,
-      level: 5,
-      xp: 450,
-      requiredXP: 500,
-      avatar: 'K',
+      level: 1,
+      xp: 0,
+      requiredXP: 100,
+      avatar: 'boy2',
       monthlyAllowance: 100,
-      streak: 7,
+      streak: 0,
       inventory: [],
-      gems: 250,
+      gems: 0,
+      mood: 100,
+      energy: 100,
     },
     friends: [
       { id: '1', name: 'Candy', isOnline: true, trustScore: 92, avatar: 'C', level: 10 },
@@ -173,25 +180,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     ],
     transactions: [],
     loans: [],
-    notifications: [
-      {
-        id: '1',
-        type: 'loan_request',
-        title: 'Loan Request',
-        message: 'Leo wants to borrow $5 for a snack',
-        timestamp: new Date(Date.now() - 300000),
-        data: { friendId: '8', amount: 5 },
-        read: false,
-      },
-      {
-        id: '2',
-        type: 'achievement',
-        title: 'Achievement Unlocked!',
-        message: 'You reached a 7-day streak!',
-        timestamp: new Date(Date.now() - 600000),
-        read: false,
-      },
-    ],
+    notifications: [],
     dailyExpenses: [
       {
         id: '1',
@@ -202,64 +191,23 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         isPaid: false,
         dueDate: new Date(),
       },
-      {
-        id: '2',
-        name: 'Bus Fare',
-        amount: 3,
-        category: 'transport',
-        icon: 'bus',
-        isPaid: false,
-        dueDate: new Date(),
-      },
     ],
-    savingsGoals: [
-      {
-        id: '1',
-        name: 'New Bike',
-        targetAmount: 150,
-        currentAmount: 75,
-        icon: 'bicycle',
-        color: '#FF9500',
-      },
-      {
-        id: '2',
-        name: 'Gaming Console',
-        targetAmount: 300,
-        currentAmount: 45,
-        icon: 'game-controller',
-        color: '#CE82FF',
-      },
-    ],
+    savingsGoals: [],
     achievements: [
       {
         id: '1',
         name: 'First Saver',
-        description: 'Save your first $10',
+        description: 'Save your first ₹100',
         icon: 'wallet',
         unlocked: true,
         unlockedAt: new Date(Date.now() - 86400000),
-      },
-      {
-        id: '2',
-        name: 'Generous Friend',
-        description: 'Help a friend 5 times',
-        icon: 'heart',
-        unlocked: false,
-      },
-      {
-        id: '3',
-        name: 'Week Warrior',
-        description: 'Maintain a 7-day streak',
-        icon: 'flame',
-        unlocked: true,
-        unlockedAt: new Date(),
       },
     ],
     dailyQuests: [
       {
         id: 'quest1',
-        title: 'Earn $10',
-        description: 'Make $10 today',
+        title: 'Earn ₹100',
+        description: 'Make ₹100 today',
         progress: 10,
         target: 10,
         reward: { type: 'xp', amount: 50 },
@@ -267,31 +215,52 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         color: '#58CC02',
         completed: true,
       },
-      {
-        id: 'quest2',
-        title: 'Save $5',
-        description: 'Add to your savings',
-        progress: 3,
-        target: 5,
-        reward: { type: 'coins', amount: 5 },
-        icon: 'wallet',
-        color: '#1CB0F6',
-        completed: false,
-      },
-      {
-        id: 'quest3',
-        title: 'Help a Friend',
-        description: 'Lend money to a friend',
-        progress: 0,
-        target: 1,
-        reward: { type: 'gems', amount: 25 },
-        icon: 'heart',
-        color: '#FF6B35',
-        completed: false,
-      },
     ],
     unlockedAchievement: null,
   });
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      // Only fetch profile if user has a token
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+      const token = await AsyncStorage.getItem('authToken');
+
+      if (!token) {
+        // No token, skip fetching profile (user not logged in)
+        return;
+      }
+
+      const profile = await userApi.getProfile();
+      setGameState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          id: profile.id,
+          name: profile.name,
+          money: profile.money,
+          level: profile.level,
+          xp: profile.xp,
+          requiredXP: profile.requiredXp || 100,
+          avatar: profile.avatar || 'boy2',
+          gems: profile.gems,
+          trustScore: profile.trustScore,
+          streak: profile.streak,
+          energy: profile.energy,
+          mood: profile.mood || 100,
+        },
+        savingsGoals: profile.savingsGoals || [],
+      }));
+    } catch (err: any) {
+      // Silently handle 401 errors (user logged out)
+      if (err?.response?.status !== 401) {
+        console.log('Failed to fetch profile:', err);
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   const updatePlayerMoney = useCallback((
     amount: number,
@@ -299,6 +268,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     description: string,
     friendId?: string
   ) => {
+    // Optimistic UI update
     setGameState(prev => {
       const newTransaction: Transaction = {
         id: Date.now().toString(),
@@ -310,23 +280,18 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       };
 
       const newMoney = prev.player.money + amount;
-
-      // Update trust score based on transaction type
-      let trustScoreChange = 0;
-      if (type === 'help' && amount < 0) trustScoreChange = 2;
-      if (type === 'lend' && amount < 0) trustScoreChange = 1;
-      if (type === 'borrow' && amount > 0) trustScoreChange = -1;
-
       return {
         ...prev,
         player: {
           ...prev.player,
           money: Math.max(0, newMoney),
-          trustScore: Math.min(100, Math.max(0, prev.player.trustScore + trustScoreChange)),
         },
         transactions: [newTransaction, ...prev.transactions].slice(0, 50),
       };
     });
+
+    // Real update - in a real app, you'd call the API here
+    // userApi.createTransaction({ type, amount, description })
   }, []);
 
   const lendMoney = useCallback((friendId: string, amount: number) => {
@@ -479,6 +444,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     });
   }, []);
 
+  const updatePlayerStats = useCallback((stats: Partial<Pick<Player, 'money' | 'xp' | 'trustScore' | 'level' | 'energy' | 'mood' | 'gems'>>) => {
+    setGameState(prev => ({
+      ...prev,
+      player: {
+        ...prev.player,
+        ...stats,
+      },
+    }));
+  }, []);
+
   const addFriend = useCallback((friend: Friend) => {
     setGameState(prev => ({
       ...prev,
@@ -513,6 +488,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     markNotificationRead,
     handleNotificationAction,
     purchaseItem,
+    updatePlayerStats,
+    refreshProfile,
   };
 
   return (

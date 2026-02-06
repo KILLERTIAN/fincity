@@ -2,11 +2,11 @@ import { FontSizes, GameColors } from '@/constants/theme';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withSpring,
-    withTiming
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 
 interface MoneyCounterProps {
@@ -94,14 +94,14 @@ export const MoneyCounter: React.FC<MoneyCounterProps> = ({
           getSizeStyles(),
           { color: getAmountColor() }
         ]}>
-          ${Math.abs(amount).toFixed(0)}
+          ₹{Math.abs(amount).toFixed(0)}
         </Text>
       </Animated.View>
-      
+
       {/* Animated difference indicator */}
       {showAnimation && difference !== 0 && (
-        <AnimatedDifference 
-          difference={difference} 
+        <AnimatedDifference
+          difference={difference}
           isIncrease={isIncrease}
         />
       )}
@@ -126,7 +126,7 @@ const AnimatedDifference: React.FC<AnimatedDifferenceProps> = ({
       withTiming(isIncrease ? -20 : 20, { duration: 300 }),
       withTiming(isIncrease ? -40 : 40, { duration: 500 })
     );
-    
+
     opacity.value = withSequence(
       withTiming(1, { duration: 300 }),
       withTiming(0, { duration: 500 })
@@ -144,7 +144,7 @@ const AnimatedDifference: React.FC<AnimatedDifferenceProps> = ({
         styles.differenceText,
         { color: isIncrease ? GameColors.moneyGreen : GameColors.moneyRed }
       ]}>
-        {isIncrease ? '+' : ''}${Math.abs(difference).toFixed(0)}
+        {isIncrease ? '+' : ''}₹{Math.abs(difference).toFixed(0)}
       </Text>
     </Animated.View>
   );

@@ -3,13 +3,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
-    interpolate,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withSequence,
-    withSpring,
-    withTiming
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 
 interface AnimatedMoneyDisplayProps {
@@ -34,7 +34,7 @@ export const AnimatedMoneyDisplay: React.FC<AnimatedMoneyDisplayProps> = ({
   const rotateX = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
   const colorIntensity = useSharedValue(0);
-  
+
   const difference = amount - previousAmount;
   const isIncrease = difference > 0;
   const isDecrease = difference < 0;
@@ -88,7 +88,7 @@ export const AnimatedMoneyDisplay: React.FC<AnimatedMoneyDisplayProps> = ({
   const glowStyle = useAnimatedStyle(() => {
     const glowScale = interpolate(glowIntensity.value, [0, 1], [1, 1.2]);
     const glowOpacity = interpolate(glowIntensity.value, [0, 1], [0, 0.6]);
-    
+
     return {
       transform: [{ scale: glowScale }],
       opacity: glowOpacity,
@@ -116,7 +116,7 @@ export const AnimatedMoneyDisplay: React.FC<AnimatedMoneyDisplayProps> = ({
   };
 
   const sizeStyles = getSizeStyles();
-  const formattedAmount = showCurrency ? `$${amount.toLocaleString()}` : amount.toLocaleString();
+  const formattedAmount = showCurrency ? `₹${amount.toLocaleString()}` : amount.toLocaleString();
 
   return (
     <View style={styles.container}>
@@ -126,8 +126,8 @@ export const AnimatedMoneyDisplay: React.FC<AnimatedMoneyDisplayProps> = ({
           style={[
             styles.glowBackground,
             {
-              backgroundColor: isIncrease ? GameColors.moneyGreen : 
-                             isDecrease ? GameColors.moneyRed : GameColors.buttonPrimary,
+              backgroundColor: isIncrease ? GameColors.moneyGreen :
+                isDecrease ? GameColors.moneyRed : GameColors.buttonPrimary,
             },
             glowStyle,
           ]}
@@ -139,8 +139,8 @@ export const AnimatedMoneyDisplay: React.FC<AnimatedMoneyDisplayProps> = ({
         style={[
           styles.colorOverlay,
           {
-            backgroundColor: isIncrease ? GameColors.moneyGreen : 
-                           isDecrease ? GameColors.moneyRed : 'transparent',
+            backgroundColor: isIncrease ? GameColors.moneyGreen :
+              isDecrease ? GameColors.moneyRed : 'transparent',
           },
           colorStyle,
         ]}
@@ -173,8 +173,8 @@ export const AnimatedMoneyDisplay: React.FC<AnimatedMoneyDisplayProps> = ({
 
       {/* Floating difference indicator */}
       {showAnimation && difference !== 0 && (
-        <FloatingDifference 
-          difference={difference} 
+        <FloatingDifference
+          difference={difference}
           isIncrease={isIncrease}
           showCurrency={showCurrency}
         />
@@ -200,12 +200,12 @@ const FloatingDifference: React.FC<FloatingDifferenceProps> = ({
 
   useEffect(() => {
     scale.value = withSpring(1, { damping: 15 });
-    
+
     translateY.value = withSequence(
       withTiming(isIncrease ? -30 : 30, { duration: 400 }),
       withTiming(isIncrease ? -60 : 60, { duration: 800 })
     );
-    
+
     opacity.value = withSequence(
       withTiming(1, { duration: 400 }),
       withTiming(0, { duration: 800 })
@@ -220,15 +220,15 @@ const FloatingDifference: React.FC<FloatingDifferenceProps> = ({
     opacity: opacity.value,
   }));
 
-  const formattedDifference = showCurrency 
-    ? `${isIncrease ? '+' : ''}$${Math.abs(difference).toLocaleString()}`
+  const formattedDifference = showCurrency
+    ? `${isIncrease ? '+' : ''}₹${Math.abs(difference).toLocaleString()}`
     : `${isIncrease ? '+' : ''}${Math.abs(difference).toLocaleString()}`;
 
   return (
     <Animated.View style={[styles.differenceContainer, animatedStyle]}>
       <LinearGradient
-        colors={isIncrease 
-          ? [GameColors.moneyGreen, '#27AE60'] 
+        colors={isIncrease
+          ? [GameColors.moneyGreen, '#27AE60']
           : [GameColors.moneyRed, '#C0392B']
         }
         style={styles.differenceBackground}

@@ -1,3 +1,4 @@
+import { AddMoneyModal } from '@/components/ui/AddMoneyModal';
 import { GameCard } from '@/components/ui/game-card';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useState } from 'react';
 import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ export default function HomeScreen() {
   const { gameState } = useGame();
   const { player } = gameState;
   const router = useRouter();
+  const [showAddMoney, setShowAddMoney] = useState(false);
 
   // Animated values for savings card
   const scale = useSharedValue(1);
@@ -25,6 +27,7 @@ export default function HomeScreen() {
       scale.value = withSpring(1);
     });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowAddMoney(true);
   };
 
   const cardStyle = useAnimatedStyle(() => ({
@@ -46,26 +49,35 @@ export default function HomeScreen() {
         {/* User Profile Info */}
         <View style={styles.profileHeader}>
           <View style={styles.profileInfo}>
-            <View style={styles.avatarMainContainer}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.avatarMainContainer,
+                { transform: [{ scale: pressed ? 0.95 : 1 }] }
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/profile');
+              }}
+            >
               <View style={styles.avatarContainer}>
                 <Image
-                  source={{ uri: 'https://api.dicebear.com/7.x/avataaars/png?seed=boy2&backgroundColor=FBD4A3' }}
+                  source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${player.avatar}&backgroundColor=FBD4A3` }}
                   style={styles.avatarImg}
                 />
               </View>
               <View style={styles.avatarLevelBadge}>
                 <Text style={styles.avatarLevelText}>{player.level}</Text>
               </View>
-            </View>
+            </Pressable>
             <View style={styles.textColumn}>
               <Text style={styles.levelTag}>LEVEL {player.level} MASTER</Text>
               <View style={styles.greetingRow}>
-                <Text style={styles.greetingText}>Hi, Om!</Text>
+                <Text style={styles.greetingText}>Hi, {player.name}!</Text>
                 <Ionicons name="sparkles" size={20} color="#FFB800" />
               </View>
             </View>
           </View>
-          <IconButton style={styles.notifButton} onPress={() => { }}>
+          <IconButton style={styles.notifButton} onPress={() => router.push('/notifications')}>
             <Ionicons name="notifications" size={24} color="#1F1F1F" />
             <View style={styles.notifBadge} />
           </IconButton>
@@ -193,6 +205,12 @@ export default function HomeScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Add Money Modal */}
+      <AddMoneyModal
+        visible={showAddMoney}
+        onClose={() => setShowAddMoney(false)}
+      />
     </SafeAreaView>
   );
 }

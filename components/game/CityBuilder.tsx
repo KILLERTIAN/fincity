@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
+import { BuildingInteractionModal } from './BuildingInteractionModal';
 import { IsometricBuilding } from './IsometricBuildings';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -51,6 +52,10 @@ export const CityBuilder: React.FC = () => {
     const [movingBuilding, setMovingBuilding] = useState<Building | null>(null);
     const [showBuildingMenu, setShowBuildingMenu] = useState(false);
     const [editMode, setEditMode] = useState(false);
+
+    // Building interaction state
+    const [showInteractionModal, setShowInteractionModal] = useState(false);
+    const [interactingBuilding, setInteractingBuilding] = useState<Building | null>(null);
 
     const verticalScrollRef = useRef<ScrollView>(null);
     const horizontalScrollRef = useRef<ScrollView>(null);
@@ -274,7 +279,19 @@ export const CityBuilder: React.FC = () => {
 
                             return (
                                 <View key={b.id} style={[styles.building, { left, top, width, height, zIndex: 1000 + depth }]}>
-                                    <Pressable style={styles.flex1} onPress={() => editMode && handleTilePress(b.gridX, b.gridY)}>
+                                    <Pressable
+                                        style={styles.flex1}
+                                        onPress={() => {
+                                            if (editMode) {
+                                                handleTilePress(b.gridX, b.gridY);
+                                            } else if (!b.isDecoration && ['bank', 'market', 'home', 'guild', 'hospital', 'gym', 'store', 'tower2', 'tower3'].includes(b.type)) {
+                                                // Open interaction modal for interactable buildings
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                setInteractingBuilding(b);
+                                                setShowInteractionModal(true);
+                                            }
+                                        }}
+                                    >
                                         <IsometricBuilding type={b.type} width={width} height={height} />
                                         {editMode && <View style={styles.delete}><Ionicons name="close-circle" size={24} color="#FF5252" /></View>}
                                     </Pressable>
@@ -319,6 +336,17 @@ export const CityBuilder: React.FC = () => {
                     </View>
                 </View>
             </Modal>
+
+            {/* Building Interaction Modal */}
+            <BuildingInteractionModal
+                visible={showInteractionModal}
+                onClose={() => {
+                    setShowInteractionModal(false);
+                    setInteractingBuilding(null);
+                }}
+                buildingType={interactingBuilding?.type as any}
+                buildingName={interactingBuilding?.name}
+            />
         </View>
     );
 };

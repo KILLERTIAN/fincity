@@ -74,8 +74,8 @@ export default function SavingsJourneyScreen() {
                     </View>
 
                     <View style={styles.amountRow}>
-                        <Text style={styles.currentAmount}>${currentSavings}</Text>
-                        <Text style={styles.goalAmountText}>/ ${goalAmount}</Text>
+                        <Text style={styles.currentAmount}>₹{currentSavings}</Text>
+                        <Text style={styles.goalAmountText}>/ ₹{goalAmount}</Text>
                     </View>
 
                     <View style={styles.percentBadge}>
@@ -111,7 +111,7 @@ export default function SavingsJourneyScreen() {
                                 milestone.status === 'next' && styles.milestoneCardNext,
                             ]}>
                                 <View style={styles.milestoneContent}>
-                                    <Text style={styles.milestoneAmount}>${milestone.amount}: {milestone.title}</Text>
+                                    <Text style={styles.milestoneAmount}>₹{milestone.amount}: {milestone.title}</Text>
                                     {milestone.status === 'next' && (
                                         <Text style={styles.milestoneStatus}>NEXT UP</Text>
                                     )}

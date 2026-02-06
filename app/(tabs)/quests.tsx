@@ -2,19 +2,32 @@ import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useState } from 'react';
 import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
 const QUIZZES = [
-    { id: 'q1', title: 'Budgeting basics', xp: 50, icon: 'receipt', color: '#B8FF66' },
-    { id: 'q2', title: 'Tax saving 101', xp: 80, icon: 'calculator', color: '#FFD700' },
-    { id: 'q3', title: 'Power of Compound', xp: 120, icon: 'trending-up', color: '#FF6B35' },
+    { id: 'budgeting', title: 'Budgeting Basics', xp: 50, icon: 'receipt', color: '#B8FF66', questions: 5, difficulty: 'Easy' },
+    { id: 'tax', title: 'Tax Saving 101', xp: 80, icon: 'calculator', color: '#FFD700', questions: 8, difficulty: 'Medium' },
+    { id: 'compound', title: 'Power of Compound', xp: 120, icon: 'trending-up', color: '#FF6B35', questions: 10, difficulty: 'Hard' },
+    { id: 'crypto', title: 'Crypto Fundamentals', xp: 100, icon: 'logo-bitcoin', color: '#F7931A', questions: 8, difficulty: 'Medium' },
+    { id: 'stocks', title: 'Stock Market Basics', xp: 90, icon: 'stats-chart', color: '#4CAF50', questions: 7, difficulty: 'Medium' },
+    { id: 'insurance', title: 'Insurance 101', xp: 70, icon: 'shield-checkmark', color: '#2196F3', questions: 6, difficulty: 'Easy' },
+    { id: 'credit', title: 'Credit Score Mastery', xp: 110, icon: 'card', color: '#9C27B0', questions: 9, difficulty: 'Hard' },
+    { id: 'retirement', title: 'Retirement Planning', xp: 130, icon: 'wallet', color: '#E91E63', questions: 10, difficulty: 'Hard' },
 ];
+
+// Mock past quiz scores - In real app, this would come from game context
+const PAST_SCORES: { [key: string]: { score: number; total: number; date: string } } = {
+    'budgeting': { score: 4, total: 5, date: '2 days ago' },
+    'tax': { score: 6, total: 8, date: '1 week ago' },
+};
 
 const VIDEOS = [
     { id: 'v1', title: 'Investment 101', time: '8m', color: '#FF9600', image: require('@/assets/game/tiger.png') },
@@ -35,8 +48,26 @@ const CurvedStar = ({ size = 16, color = '#FFB800' }: { size?: number, color?: s
     </Svg>
 );
 
+const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+        case 'Easy': return '#58CC02';
+        case 'Medium': return '#FFB800';
+        case 'Hard': return '#FF4B4B';
+        default: return '#8B8B8B';
+    }
+};
+
 export default function LearnScreen() {
     const { gameState } = useGame();
+    const router = useRouter();
+    const [showAllQuizzes, setShowAllQuizzes] = useState(false);
+
+    const displayedQuizzes = showAllQuizzes ? QUIZZES : QUIZZES.slice(0, 4);
+    const completedQuizzes = Object.keys(PAST_SCORES).length;
+    const totalXPEarned = Object.keys(PAST_SCORES).reduce((acc, key) => {
+        const quiz = QUIZZES.find(q => q.id === key);
+        return acc + (quiz?.xp || 0);
+    }, 0);
 
     return (
         <View style={styles.container}>
@@ -97,6 +128,46 @@ export default function LearnScreen() {
                         <Ionicons name="school" size={140} color="rgba(184,255,102,0.05)" style={styles.bgIcon} />
                     </LinearGradient>
 
+                    {/* Quiz Stats Card */}
+                    <View style={styles.statsRow}>
+                        <View style={styles.statCard}>
+                            <LinearGradient
+                                colors={['#58CC02', '#46A302']}
+                                style={styles.statIconBox}
+                            >
+                                <Ionicons name="checkmark-done" size={20} color="white" />
+                            </LinearGradient>
+                            <View>
+                                <Text style={styles.statValue}>{completedQuizzes}</Text>
+                                <Text style={styles.statLabel}>Completed</Text>
+                            </View>
+                        </View>
+                        <View style={styles.statCard}>
+                            <LinearGradient
+                                colors={['#FFB800', '#FF9600']}
+                                style={styles.statIconBox}
+                            >
+                                <Ionicons name="star" size={20} color="white" />
+                            </LinearGradient>
+                            <View>
+                                <Text style={styles.statValue}>{totalXPEarned}</Text>
+                                <Text style={styles.statLabel}>XP Earned</Text>
+                            </View>
+                        </View>
+                        <View style={styles.statCard}>
+                            <LinearGradient
+                                colors={['#1CB0F6', '#0095D9']}
+                                style={styles.statIconBox}
+                            >
+                                <Ionicons name="flame" size={20} color="white" />
+                            </LinearGradient>
+                            <View>
+                                <Text style={styles.statValue}>5</Text>
+                                <Text style={styles.statLabel}>Day Streak</Text>
+                            </View>
+                        </View>
+                    </View>
+
                     {/* Next Up (Videos) */}
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Next Up</Text>
@@ -146,31 +217,79 @@ export default function LearnScreen() {
                     {/* Daily Quizzes */}
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Daily Quizzes</Text>
-                        <Pressable><Text style={styles.viewAllText}>View All</Text></Pressable>
+                        <Pressable onPress={() => setShowAllQuizzes(!showAllQuizzes)}>
+                            <Text style={styles.viewAllText}>{showAllQuizzes ? 'Show Less' : 'View All'}</Text>
+                        </Pressable>
                     </View>
 
-                    {QUIZZES.map((quiz) => (
-                        <Pressable
-                            key={quiz.id}
-                            style={({ pressed }) => [
-                                styles.quizCard,
-                                { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                            ]}
-                            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-                        >
-                            <View style={[styles.quizIconBox, { backgroundColor: quiz.color + '20' }]}>
-                                <Ionicons name={quiz.icon as any} size={26} color={quiz.color} />
-                            </View>
-                            <View style={styles.quizInfo}>
-                                <Text style={styles.quizTitle}>{quiz.title}</Text>
-                                <View style={styles.xpReward}>
-                                    <CurvedStar size={14} color="#FFB800" />
-                                    <Text style={styles.xpText}>+{quiz.xp} XP</Text>
-                                </View>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color="#AFAFAF" />
-                        </Pressable>
-                    ))}
+                    {displayedQuizzes.map((quiz, index) => {
+                        const pastScore = PAST_SCORES[quiz.id];
+                        const isCompleted = !!pastScore;
+                        const scorePercent = pastScore ? Math.round((pastScore.score / pastScore.total) * 100) : 0;
+
+                        return (
+                            <Animated.View
+                                key={quiz.id}
+                                entering={FadeInDown.delay(index * 50).duration(300)}
+                                layout={Layout.springify()}
+                            >
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.quizCard,
+                                        isCompleted && styles.quizCardCompleted,
+                                        { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                                    ]}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        router.push(`/quiz?id=${quiz.id}`);
+                                    }}
+                                >
+                                    <View style={[styles.quizIconBox, { backgroundColor: quiz.color + '20' }]}>
+                                        <Ionicons name={quiz.icon as any} size={26} color={quiz.color} />
+                                        {isCompleted && (
+                                            <View style={styles.completedBadge}>
+                                                <Ionicons name="checkmark" size={12} color="white" />
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.quizInfo}>
+                                        <View style={styles.quizTitleRow}>
+                                            <Text style={styles.quizTitle}>{quiz.title}</Text>
+                                            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(quiz.difficulty) + '20' }]}>
+                                                <Text style={[styles.difficultyText, { color: getDifficultyColor(quiz.difficulty) }]}>
+                                                    {quiz.difficulty}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <View style={styles.quizMeta}>
+                                            <View style={styles.xpReward}>
+                                                <CurvedStar size={14} color="#FFB800" />
+                                                <Text style={styles.xpText}>+{quiz.xp} XP</Text>
+                                            </View>
+                                            <Text style={styles.questionCount}>{quiz.questions} questions</Text>
+                                        </View>
+                                        {isCompleted && pastScore && (
+                                            <View style={styles.scoreRow}>
+                                                <View style={styles.scoreBar}>
+                                                    <View style={[styles.scoreBarFill, { width: `${scorePercent}%`, backgroundColor: scorePercent >= 70 ? '#58CC02' : '#FFB800' }]} />
+                                                </View>
+                                                <Text style={styles.scoreText}>{pastScore.score}/{pastScore.total} • {pastScore.date}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.quizArrow}>
+                                        {isCompleted ? (
+                                            <View style={styles.retryBadge}>
+                                                <Ionicons name="refresh" size={16} color="#1CB0F6" />
+                                            </View>
+                                        ) : (
+                                            <Ionicons name="chevron-forward" size={20} color="#AFAFAF" />
+                                        )}
+                                    </View>
+                                </Pressable>
+                            </Animated.View>
+                        );
+                    })}
 
                     <View style={{ height: 100 }} />
                 </ScrollView>
@@ -225,14 +344,14 @@ const styles = StyleSheet.create({
         borderRadius: 32,
         padding: 24,
         paddingBottom: 20,
-        marginBottom: 24,
+        marginBottom: 20,
         overflow: 'hidden',
         position: 'relative',
     },
     featuredTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'baseline',
+        alignItems: 'flex-start',
         marginBottom: 20,
         position: 'relative',
         zIndex: 2,
@@ -309,6 +428,48 @@ const styles = StyleSheet.create({
         right: -20,
         zIndex: 1,
     },
+    statsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 24,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        paddingVertical: 16,
+        paddingHorizontal: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        borderWidth: 2,
+        borderColor: '#F0F0F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 6,
+        elevation: 1,
+    },
+    statIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    statValue: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: '#1F1F1F',
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    statLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#8B8B8B',
+        textAlign: 'center',
+    },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -350,7 +511,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: -10,
         bottom: -15,
-        opacity: 0.6,
+        opacity: 0.9,
         transform: [{ rotate: '-10deg' }],
     },
     thumbDoodleContainer: {
@@ -398,9 +559,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'white',
-        padding: 18,
-        borderRadius: 28,
-        marginBottom: 14,
+        padding: 16,
+        borderRadius: 24,
+        marginBottom: 12,
         borderWidth: 2,
         borderColor: '#F0F0F0',
         shadowColor: '#000',
@@ -409,22 +570,61 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 2,
     },
+    quizCardCompleted: {
+        borderColor: '#58CC02',
+        borderWidth: 2,
+        backgroundColor: '#F8FFF0',
+    },
     quizIconBox: {
         width: 56,
         height: 56,
-        borderRadius: 20,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 14,
+        position: 'relative',
+    },
+    completedBadge: {
+        position: 'absolute',
+        bottom: -4,
+        right: -4,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#58CC02',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: 'white',
     },
     quizInfo: {
         flex: 1,
     },
+    quizTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 4,
+        flexWrap: 'wrap',
+    },
     quizTitle: {
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: '900',
         color: '#1F1F1F',
-        marginBottom: 4,
+    },
+    difficultyBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
+    },
+    difficultyText: {
+        fontSize: 10,
+        fontWeight: '800',
+    },
+    quizMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
     xpReward: {
         flexDirection: 'row',
@@ -435,5 +635,40 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '800',
         color: '#FFB800',
+    },
+    questionCount: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#8B8B8B',
+    },
+    scoreRow: {
+        marginTop: 8,
+        gap: 4,
+    },
+    scoreBar: {
+        height: 6,
+        backgroundColor: '#F0F0F0',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    scoreBarFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    scoreText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#8B8B8B',
+    },
+    quizArrow: {
+        marginLeft: 8,
+    },
+    retryBadge: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#E6F4FF',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
