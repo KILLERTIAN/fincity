@@ -1,7 +1,6 @@
 import { useAudio } from '@/contexts/audio-context';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -24,14 +23,15 @@ const { width } = Dimensions.get('window');
 interface BuildingModalProps {
     visible: boolean;
     onClose: () => void;
-    buildingType: 'bank' | 'market' | 'home' | 'guild' | 'hospital' | 'gym' | 'store' | 'tower2' | 'tower3' | null;
+    buildingType: 'bank' | 'market' | 'home' | 'guild' | 'hospital' | 'gym' | 'store' | 'tower2' | 'tower3' | 'coffee' | null;
     buildingName?: string;
 }
 
 interface BuildingConfig {
     name: string;
     icon: string;
-    gradient: [string, string];
+    color: string; // Single solid color instead of gradient
+    bgColor: string; // Light background color
     description: string;
 }
 
@@ -39,43 +39,57 @@ const BUILDING_CONFIG: Record<string, BuildingConfig> = {
     bank: {
         name: 'Classic Bank',
         icon: 'business',
-        gradient: ['#4b6cb7', '#182848'],
+        color: '#1CB0F6',
+        bgColor: '#E6F4FF',
         description: 'Manage your savings and keep your money safe',
     },
     market: {
         name: 'City Market',
         icon: 'cart',
-        gradient: ['#f093fb', '#f5576c'],
+        color: '#FF6B35',
+        bgColor: '#FFF0EB',
         description: 'Buy food and supplies to restore energy',
     },
     home: {
         name: 'Your Home',
         icon: 'home',
-        gradient: ['#4facfe', '#00f2fe'],
+        color: '#58CC02',
+        bgColor: '#E8F5E9',
         description: 'Rest and recover your energy',
     },
     guild: {
         name: 'Office Building',
         icon: 'briefcase',
-        gradient: ['#43e97b', '#38f9d7'],
-        description: 'Work to earn money or invest to improve character mood and stats',
+        color: '#58CC02',
+        bgColor: '#E8F5E9',
+        description: 'Work to earn money and gain experience',
+    },
+    coffee: {
+        name: 'Coffee Shop',
+        icon: 'cafe',
+        color: '#8B4513',
+        bgColor: '#FFF8DC',
+        description: 'Grab a drink to boost your mood',
     },
     hospital: {
         name: 'City Hospital',
         icon: 'medical',
-        gradient: ['#fa709a', '#fee140'],
+        color: '#FF4B4B',
+        bgColor: '#FFE6E6',
         description: 'Get healed and restore full energy',
     },
     gym: {
         name: 'Fitness Center',
         icon: 'fitness',
-        gradient: ['#ff6b6b', '#feca57'],
+        color: '#FF9600',
+        bgColor: '#FFF3E0',
         description: 'Workout to earn XP and boost your stats',
     },
     store: {
         name: 'General Store',
         icon: 'storefront',
-        gradient: ['#a8edea', '#fed6e3'],
+        color: '#CE82FF',
+        bgColor: '#F3E5F5',
         description: 'Shop for items and upgrades',
     },
 };
@@ -96,7 +110,12 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
 
     if (!buildingType) return null;
 
-    const effectiveType = buildingType === 'tower2' || buildingType === 'tower3' ? 'guild' : buildingType;
+    // Map building types to their interaction configs
+    const effectiveType = buildingType === 'tower2' || buildingType === 'tower3'
+        ? 'guild'
+        : buildingType === 'store'
+            ? 'coffee'
+            : buildingType;
     const config = BUILDING_CONFIG[effectiveType as string];
     if (!config) return null;
 
@@ -235,6 +254,61 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                         }
                     }
                     break;
+
+                case 'coffee':
+                    if (action === 'espresso') {
+                        const cost = 15;
+                        if (player.money < cost) {
+                            message = 'Not enough money for espresso';
+                            success = false;
+                        } else {
+                            updatePlayerStats({
+                                money: player.money - cost,
+                                mood: Math.min(100, player.mood + 10),
+                                energy: Math.min(100, player.energy + 5)
+                            });
+                            message = 'Espresso boost! +10 Mood, +5 Energy';
+                        }
+                    } else if (action === 'latte') {
+                        const cost = 25;
+                        if (player.money < cost) {
+                            message = 'Not enough money for latte';
+                            success = false;
+                        } else {
+                            updatePlayerStats({
+                                money: player.money - cost,
+                                mood: Math.min(100, player.mood + 20)
+                            });
+                            message = 'Delicious latte! +20 Mood';
+                        }
+                    } else if (action === 'smoothie') {
+                        const cost = 35;
+                        if (player.money < cost) {
+                            message = 'Not enough money for smoothie';
+                            success = false;
+                        } else {
+                            updatePlayerStats({
+                                money: player.money - cost,
+                                mood: Math.min(100, player.mood + 30),
+                                energy: Math.min(100, player.energy + 10)
+                            });
+                            message = 'Refreshing smoothie! +30 Mood, +10 Energy';
+                        }
+                    } else if (action === 'special') {
+                        const cost = 50;
+                        if (player.money < cost) {
+                            message = 'Not enough money for special';
+                            success = false;
+                        } else {
+                            updatePlayerStats({
+                                money: player.money - cost,
+                                mood: Math.min(100, player.mood + 50),
+                                energy: Math.min(100, player.energy + 20)
+                            });
+                            message = 'Premium blend! +50 Mood, +20 Energy';
+                        }
+                    }
+                    break;
             }
 
             setResult({ message, type: success ? 'success' : 'error' });
@@ -339,7 +413,7 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                             icon="briefcase"
                             title="Work"
                             subtitle="₹30-70 • -20 Energy"
-                            color="#43e97b"
+                            color="#58CC02"
                             onPress={() => handleAction('work')}
                             loading={loading}
                         />
@@ -347,7 +421,7 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                             icon="cafe"
                             title="Coffee Break"
                             subtitle="₹20 • +25 Mood"
-                            color="#f6d365"
+                            color="#8B4513"
                             onPress={() => handleAction('relax')}
                             loading={loading}
                         />
@@ -355,7 +429,7 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                             icon="trending-up"
                             title="Invest"
                             subtitle="₹100 • +50 XP"
-                            color="#4facfe"
+                            color="#1CB0F6"
                             onPress={() => handleAction('invest')}
                             loading={loading}
                         />
@@ -369,7 +443,7 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                             icon="medical"
                             title="Get Healed"
                             subtitle="₹30 • Full energy restore"
-                            color="#fa709a"
+                            color="#FF4B4B"
                             onPress={() => handleAction('heal')}
                             loading={loading}
                             large
@@ -384,12 +458,50 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                             icon="barbell"
                             title="Workout"
                             subtitle="₹10 • +15 XP"
-                            color="#ff6b6b"
+                            color="#FF9600"
                             onPress={() => handleAction('workout')}
                             loading={loading}
                             large
                         />
                     </View>
+                );
+
+            case 'coffee':
+                return (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
+                        <ActionCard
+                            icon="cafe"
+                            title="Espresso"
+                            subtitle="₹15 • +10 Mood"
+                            color="#8B4513"
+                            onPress={() => handleAction('espresso')}
+                            loading={loading}
+                        />
+                        <ActionCard
+                            icon="cafe-outline"
+                            title="Latte"
+                            subtitle="₹25 • +20 Mood"
+                            color="#D2691E"
+                            onPress={() => handleAction('latte')}
+                            loading={loading}
+                        />
+                        <ActionCard
+                            icon="nutrition"
+                            title="Smoothie"
+                            subtitle="₹35 • +30 Mood"
+                            color="#FF6B35"
+                            onPress={() => handleAction('smoothie')}
+                            loading={loading}
+                        />
+                        <ActionCard
+                            icon="sparkles"
+                            title="Special"
+                            subtitle="₹50 • +50 Mood"
+                            color="#FFB800"
+                            onPress={() => handleAction('special')}
+                            loading={loading}
+                        />
+                    </ScrollView>
                 );
 
             default:
@@ -415,13 +527,10 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                         entering={FadeIn.duration(200)}
                         style={styles.modalContainer}
                     >
-                        {/* Header */}
-                        <LinearGradient
-                            colors={config.gradient}
-                            style={styles.header}
-                        >
+                        {/* Header - Clean solid color */}
+                        <View style={[styles.header, { backgroundColor: config.color }]}>
                             <View style={styles.headerContent}>
-                                <View style={styles.headerIcon}>
+                                <View style={[styles.headerIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                                     <Ionicons name={config.icon as any} size={32} color="white" />
                                 </View>
                                 <View style={styles.headerText}>
@@ -432,7 +541,7 @@ export const BuildingInteractionModal: React.FC<BuildingModalProps> = ({
                             <Pressable style={styles.closeBtn} onPress={onClose}>
                                 <Ionicons name="close" size={24} color="white" />
                             </Pressable>
-                        </LinearGradient>
+                        </View>
 
                         {/* Content */}
                         <View style={styles.content}>

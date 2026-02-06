@@ -1,4 +1,5 @@
 import { GameCard } from '@/components/ui/game-card';
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -144,168 +145,170 @@ export default function NotificationsScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
-            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+            <ScreenWrapper>
+                <StatusBar style="dark" />
+                <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
 
-                {/* Header */}
-                <View style={styles.header}>
-                    <Pressable
-                        style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
-                        onPress={() => router.back()}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="#1F1F1F" />
-                    </Pressable>
-                    <View style={styles.headerCenter}>
-                        <Text style={styles.headerTitle}>Notifications</Text>
-                        {unreadCount > 0 && (
-                            <View style={styles.unreadBadge}>
-                                <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-                            </View>
-                        )}
-                    </View>
-                    <Pressable
-                        style={({ pressed }) => [styles.moreBtn, { opacity: pressed ? 0.6 : 1 }]}
-                        onPress={markAllAsRead}
-                    >
-                        <Ionicons name="checkmark-done" size={24} color="#1CB0F6" />
-                    </Pressable>
-                </View>
-
-                {/* Filter Tabs */}
-                <View style={styles.filterContainer}>
-                    <Pressable
-                        style={[styles.filterTab, filter === 'all' && styles.filterTabActive]}
-                        onPress={() => setFilter('all')}
-                    >
-                        <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
-                            All
-                        </Text>
-                    </Pressable>
-                    <Pressable
-                        style={[styles.filterTab, filter === 'unread' && styles.filterTabActive]}
-                        onPress={() => setFilter('unread')}
-                    >
-                        <Text style={[styles.filterText, filter === 'unread' && styles.filterTextActive]}>
-                            Unread ({unreadCount})
-                        </Text>
-                    </Pressable>
-                </View>
-
-                <ScrollView
-                    style={styles.scrollView}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
-                >
-                    {filteredNotifications.length === 0 ? (
-                        <Animated.View
-                            entering={FadeIn}
-                            style={styles.emptyState}
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Pressable
+                            style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
+                            onPress={() => router.back()}
                         >
-                            <View style={styles.emptyIconBox}>
-                                <Ionicons name="notifications-off-outline" size={64} color="#AFAFAF" />
-                            </View>
-                            <Text style={styles.emptyTitle}>All Caught Up! 🎉</Text>
-                            <Text style={styles.emptySubtitle}>
-                                No {filter === 'unread' ? 'unread ' : ''}notifications right now
+                            <Ionicons name="arrow-back" size={24} color="#1F1F1F" />
+                        </Pressable>
+                        <View style={styles.headerCenter}>
+                            <Text style={styles.headerTitle}>Notifications</Text>
+                            {unreadCount > 0 && (
+                                <View style={styles.unreadBadge}>
+                                    <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+                                </View>
+                            )}
+                        </View>
+                        <Pressable
+                            style={({ pressed }) => [styles.moreBtn, { opacity: pressed ? 0.6 : 1 }]}
+                            onPress={markAllAsRead}
+                        >
+                            <Ionicons name="checkmark-done" size={24} color="#1CB0F6" />
+                        </Pressable>
+                    </View>
+
+                    {/* Filter Tabs */}
+                    <View style={styles.filterContainer}>
+                        <Pressable
+                            style={[styles.filterTab, filter === 'all' && styles.filterTabActive]}
+                            onPress={() => setFilter('all')}
+                        >
+                            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
+                                All
                             </Text>
-                        </Animated.View>
-                    ) : (
-                        filteredNotifications.map((notif, index) => {
-                            const iconData = getNotificationIcon(notif.type);
-                            const hasActions = ['loan_request', 'friend_request', 'help_request', 'daily_reward'].includes(notif.type);
+                        </Pressable>
+                        <Pressable
+                            style={[styles.filterTab, filter === 'unread' && styles.filterTabActive]}
+                            onPress={() => setFilter('unread')}
+                        >
+                            <Text style={[styles.filterText, filter === 'unread' && styles.filterTextActive]}>
+                                Unread ({unreadCount})
+                            </Text>
+                        </Pressable>
+                    </View>
 
-                            return (
-                                <Animated.View
-                                    key={notif.id}
-                                    entering={SlideInRight.delay(index * 50)}
-                                    exiting={SlideOutRight}
-                                    layout={Layout.springify()}
-                                >
-                                    <Pressable
-                                        onPress={() => handleNotificationPress(notif)}
-                                        style={({ pressed }) => [
-                                            { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                                        ]}
+                    <ScrollView
+                        style={styles.scrollView}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                    >
+                        {filteredNotifications.length === 0 ? (
+                            <Animated.View
+                                entering={FadeIn}
+                                style={styles.emptyState}
+                            >
+                                <View style={styles.emptyIconBox}>
+                                    <Ionicons name="notifications-off-outline" size={64} color="#AFAFAF" />
+                                </View>
+                                <Text style={styles.emptyTitle}>All Caught Up! 🎉</Text>
+                                <Text style={styles.emptySubtitle}>
+                                    No {filter === 'unread' ? 'unread ' : ''}notifications right now
+                                </Text>
+                            </Animated.View>
+                        ) : (
+                            filteredNotifications.map((notif, index) => {
+                                const iconData = getNotificationIcon(notif.type);
+                                const hasActions = ['loan_request', 'friend_request', 'help_request', 'daily_reward'].includes(notif.type);
+
+                                return (
+                                    <Animated.View
+                                        key={notif.id}
+                                        entering={SlideInRight.delay(index * 50)}
+                                        exiting={SlideOutRight}
+                                        layout={Layout.springify()}
                                     >
-                                        <GameCard style={[
-                                            styles.notificationCard,
-                                            !notif.read && styles.unreadCard
-                                        ]}>
-                                            {!notif.read && <View style={styles.unreadDot} />}
+                                        <Pressable
+                                            onPress={() => handleNotificationPress(notif)}
+                                            style={({ pressed }) => [
+                                                { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                                            ]}
+                                        >
+                                            <GameCard style={[
+                                                styles.notificationCard,
+                                                !notif.read && styles.unreadCard
+                                            ]}>
+                                                {!notif.read && <View style={styles.unreadDot} />}
 
-                                            <View style={styles.notifTop}>
-                                                {notif.avatar ? (
-                                                    <View style={styles.avatarContainer}>
-                                                        <Image
-                                                            source={{ uri: notif.avatar }}
-                                                            style={styles.avatar}
-                                                        />
-                                                        <View style={[styles.typeIconSmall, { backgroundColor: iconData.bg }]}>
-                                                            <Ionicons name={iconData.icon as any} size={12} color={iconData.color} />
+                                                <View style={styles.notifTop}>
+                                                    {notif.avatar ? (
+                                                        <View style={styles.avatarContainer}>
+                                                            <Image
+                                                                source={{ uri: notif.avatar }}
+                                                                style={styles.avatar}
+                                                            />
+                                                            <View style={[styles.typeIconSmall, { backgroundColor: iconData.bg }]}>
+                                                                <Ionicons name={iconData.icon as any} size={12} color={iconData.color} />
+                                                            </View>
                                                         </View>
+                                                    ) : (
+                                                        <View style={[styles.iconBox, { backgroundColor: iconData.bg }]}>
+                                                            <Ionicons name={iconData.icon as any} size={28} color={iconData.color} />
+                                                        </View>
+                                                    )}
+
+                                                    <View style={styles.notifContent}>
+                                                        <Text style={styles.notifTitle}>{notif.title}</Text>
+                                                        <Text style={styles.notifMessage}>{notif.message}</Text>
+                                                        <Text style={styles.notifTime}>{formatTimeAgo(notif.timestamp)}</Text>
                                                     </View>
-                                                ) : (
-                                                    <View style={[styles.iconBox, { backgroundColor: iconData.bg }]}>
-                                                        <Ionicons name={iconData.icon as any} size={28} color={iconData.color} />
+                                                </View>
+
+                                                {/* Action Buttons */}
+                                                {hasActions && !notif.read && (
+                                                    <View style={styles.actionRow}>
+                                                        <Pressable
+                                                            style={({ pressed }) => [
+                                                                styles.declineBtn,
+                                                                { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                                            ]}
+                                                            onPress={() => handleDecline(notif)}
+                                                        >
+                                                            <Ionicons name="close" size={18} color="#FF4B4B" />
+                                                            <Text style={styles.declineBtnText}>Decline</Text>
+                                                        </Pressable>
+                                                        <Pressable
+                                                            style={({ pressed }) => [
+                                                                styles.acceptBtn,
+                                                                { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                                            ]}
+                                                            onPress={() => handleAccept(notif)}
+                                                        >
+                                                            <Ionicons name="checkmark" size={18} color="white" />
+                                                            <Text style={styles.acceptBtnText}>
+                                                                {notif.type === 'daily_reward' ? 'Claim' : 'Accept'}
+                                                            </Text>
+                                                        </Pressable>
                                                     </View>
                                                 )}
+                                            </GameCard>
+                                        </Pressable>
+                                    </Animated.View>
+                                );
+                            })
+                        )}
 
-                                                <View style={styles.notifContent}>
-                                                    <Text style={styles.notifTitle}>{notif.title}</Text>
-                                                    <Text style={styles.notifMessage}>{notif.message}</Text>
-                                                    <Text style={styles.notifTime}>{formatTimeAgo(notif.timestamp)}</Text>
-                                                </View>
-                                            </View>
+                        {/* Clear Read Button */}
+                        {notifications.some(n => n.read) && (
+                            <Pressable
+                                style={styles.clearBtn}
+                                onPress={clearAllRead}
+                            >
+                                <Ionicons name="trash-outline" size={18} color="#FF4B4B" />
+                                <Text style={styles.clearBtnText}>Clear Read Notifications</Text>
+                            </Pressable>
+                        )}
 
-                                            {/* Action Buttons */}
-                                            {hasActions && !notif.read && (
-                                                <View style={styles.actionRow}>
-                                                    <Pressable
-                                                        style={({ pressed }) => [
-                                                            styles.declineBtn,
-                                                            { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                                        ]}
-                                                        onPress={() => handleDecline(notif)}
-                                                    >
-                                                        <Ionicons name="close" size={18} color="#FF4B4B" />
-                                                        <Text style={styles.declineBtnText}>Decline</Text>
-                                                    </Pressable>
-                                                    <Pressable
-                                                        style={({ pressed }) => [
-                                                            styles.acceptBtn,
-                                                            { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                                        ]}
-                                                        onPress={() => handleAccept(notif)}
-                                                    >
-                                                        <Ionicons name="checkmark" size={18} color="white" />
-                                                        <Text style={styles.acceptBtnText}>
-                                                            {notif.type === 'daily_reward' ? 'Claim' : 'Accept'}
-                                                        </Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
-                                        </GameCard>
-                                    </Pressable>
-                                </Animated.View>
-                            );
-                        })
-                    )}
+                        <View style={{ height: 100 }} />
+                    </ScrollView>
 
-                    {/* Clear Read Button */}
-                    {notifications.some(n => n.read) && (
-                        <Pressable
-                            style={styles.clearBtn}
-                            onPress={clearAllRead}
-                        >
-                            <Ionicons name="trash-outline" size={18} color="#FF4B4B" />
-                            <Text style={styles.clearBtnText}>Clear Read Notifications</Text>
-                        </Pressable>
-                    )}
-
-                    <View style={{ height: 100 }} />
-                </ScrollView>
-
-            </SafeAreaView>
+                </SafeAreaView>
+            </ScreenWrapper>
         </View>
     );
 }

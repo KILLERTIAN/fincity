@@ -1,3 +1,4 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { authApi } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -72,97 +73,99 @@ export default function Login() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <StatusBar style="dark" />
-            <LinearGradient
-                colors={['#F0F7FF', '#FFFFFF']}
-                style={styles.background}
-            />
+            <ScreenWrapper>
+                <StatusBar style="dark" />
+                <LinearGradient
+                    colors={['#F0F7FF', '#FFFFFF']}
+                    style={styles.background}
+                />
 
-            <View style={styles.content}>
-                <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.header}>
-                    <View style={styles.logoBox}>
-                        <Ionicons name="stats-chart" size={40} color="#1CB0F6" />
-                    </View>
-                    <Text style={styles.title}>FinCity</Text>
-                    <Text style={styles.subtitle}>Build your financial empire</Text>
-                </Animated.View>
-
-                <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.form}>
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="mail-outline" size={20} color="#AFAFAF" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="name@example.com"
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                            />
+                <View style={styles.content}>
+                    <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.header}>
+                        <View style={styles.logoBox}>
+                            <Ionicons name="stats-chart" size={40} color="#1CB0F6" />
                         </View>
-                    </View>
+                        <Text style={styles.title}>FinCity</Text>
+                        <Text style={styles.subtitle}>Build your financial empire</Text>
+                    </Animated.View>
 
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>PASSWORD</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-closed-outline" size={20} color="#AFAFAF" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="••••••••"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                            />
-                            <Pressable onPress={() => setShowPassword(!showPassword)}>
-                                <Ionicons
-                                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                                    size={20}
-                                    color="#AFAFAF"
+                    <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.form}>
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="mail-outline" size={20} color="#AFAFAF" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
                                 />
-                            </Pressable>
+                            </View>
                         </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>PASSWORD</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="lock-closed-outline" size={20} color="#AFAFAF" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!showPassword}
+                                />
+                                <Pressable onPress={() => setShowPassword(!showPassword)}>
+                                    <Ionicons
+                                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                        size={20}
+                                        color="#AFAFAF"
+                                    />
+                                </Pressable>
+                            </View>
+                        </View>
+
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.loginBtn,
+                                { opacity: pressed || loading ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
+                            ]}
+                            onPress={handleLogin}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={styles.loginBtnText}>SIGN IN</Text>
+                            )}
+                        </Pressable>
+
+                        <View style={styles.divider}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>OR</Text>
+                            <View style={styles.dividerLine} />
+                        </View>
+
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.guestBtn,
+                                { opacity: pressed ? 0.8 : 1 }
+                            ]}
+                            onPress={handleGuestLogin}
+                        >
+                            <Text style={styles.guestBtnText}>Continue as Guest</Text>
+                        </Pressable>
+                    </Animated.View>
+
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <Pressable onPress={() => router.push('/onboarding')}>
+                            <Text style={styles.footerLink}>Sign Up</Text>
+                        </Pressable>
                     </View>
-
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.loginBtn,
-                            { opacity: pressed || loading ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }
-                        ]}
-                        onPress={handleLogin}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={styles.loginBtnText}>SIGN IN</Text>
-                        )}
-                    </Pressable>
-
-                    <View style={styles.divider}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>OR</Text>
-                        <View style={styles.dividerLine} />
-                    </View>
-
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.guestBtn,
-                            { opacity: pressed ? 0.8 : 1 }
-                        ]}
-                        onPress={handleGuestLogin}
-                    >
-                        <Text style={styles.guestBtnText}>Continue as Guest</Text>
-                    </Pressable>
-                </Animated.View>
-
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don't have an account? </Text>
-                    <Pressable onPress={() => router.push('/onboarding')}>
-                        <Text style={styles.footerLink}>Sign Up</Text>
-                    </Pressable>
                 </View>
-            </View>
+            </ScreenWrapper>
         </KeyboardAvoidingView>
     );
 }

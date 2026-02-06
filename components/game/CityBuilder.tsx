@@ -6,6 +6,7 @@ import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View
 import Svg, { Polygon } from 'react-native-svg';
 import { BuildingInteractionModal } from './BuildingInteractionModal';
 import { IsometricBuilding } from './IsometricBuildings';
+import { SimulationDashboard } from './SimulationDashboard';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -56,6 +57,8 @@ export const CityBuilder: React.FC = () => {
     // Building interaction state
     const [showInteractionModal, setShowInteractionModal] = useState(false);
     const [interactingBuilding, setInteractingBuilding] = useState<Building | null>(null);
+    const [showSimDashboard, setShowSimDashboard] = useState(false);
+    const [isControlsExpanded, setIsControlsExpanded] = useState(false);
 
     const verticalScrollRef = useRef<ScrollView>(null);
     const horizontalScrollRef = useRef<ScrollView>(null);
@@ -303,18 +306,51 @@ export const CityBuilder: React.FC = () => {
             </ScrollView>
 
             <View style={styles.footer}>
-                <Pressable style={[styles.btn, { backgroundColor: '#F44336' }]} onPress={() => Alert.alert('Reset City', 'Start over with the default city layout?', [{ text: 'Cancel' }, { text: 'Reset', onPress: createDefaultCity }])}>
-                    <Ionicons name="refresh" size={18} color="white" /><Text style={styles.btnText}>Reset</Text>
-                </Pressable>
-                <Pressable style={[styles.btn, editMode && { backgroundColor: '#FF9800' }]} onPress={() => setEditMode(!editMode)}>
-                    <Ionicons name={editMode ? "checkmark" : "create"} size={18} color="white" /><Text style={styles.btnText}>{editMode ? 'Done' : 'Edit'}</Text>
-                </Pressable>
-                <Pressable style={styles.btn} onPress={() => setShowBuildingMenu(true)}>
-                    <Ionicons name="add" size={18} color="white" /><Text style={styles.btnText}>Add</Text>
-                </Pressable>
-                <Pressable style={[styles.btn, { backgroundColor: '#4CAF50' }]} onPress={saveLayout}>
-                    <Ionicons name="save" size={18} color="white" /><Text style={styles.btnText}>Save</Text>
-                </Pressable>
+                {!isControlsExpanded ? (
+                    <View style={styles.collapsedFooter}>
+                        <Pressable
+                            style={[styles.mainFab, { backgroundColor: '#5AA1F4' }]}
+                            onPress={() => setShowSimDashboard(true)}
+                        >
+                            <Ionicons name="game-controller" size={24} color="white" />
+                            <Text style={styles.fabText}>SIM</Text>
+                        </Pressable>
+                        <Pressable
+                            style={[styles.mainFab, { backgroundColor: '#1CB0F6' }]}
+                            onPress={() => {
+                                setIsControlsExpanded(true);
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }}
+                        >
+                            <Ionicons name="construct" size={24} color="white" />
+                            <Text style={styles.fabText}>BUILD</Text>
+                        </Pressable>
+                    </View>
+                ) : (
+                    <View style={styles.expandedFooter}>
+                        <Pressable style={[styles.btn, { backgroundColor: '#F44336' }]} onPress={() => Alert.alert('Reset City', 'Start over with the default city layout?', [{ text: 'Cancel' }, { text: 'Reset', onPress: createDefaultCity }])}>
+                            <Ionicons name="refresh" size={18} color="white" />
+                        </Pressable>
+                        <Pressable style={[styles.btn, editMode && { backgroundColor: '#FF9800' }]} onPress={() => setEditMode(!editMode)}>
+                            <Ionicons name={editMode ? "checkmark" : "create"} size={18} color="white" /><Text style={styles.btnText}>{editMode ? 'Done' : 'Edit'}</Text>
+                        </Pressable>
+                        <Pressable style={styles.btn} onPress={() => setShowBuildingMenu(true)}>
+                            <Ionicons name="add" size={18} color="white" /><Text style={styles.btnText}>Add</Text>
+                        </Pressable>
+                        <Pressable style={[styles.btn, { backgroundColor: '#4CAF50' }]} onPress={saveLayout}>
+                            <Ionicons name="save" size={18} color="white" />
+                        </Pressable>
+                        <Pressable
+                            style={[styles.btn, { backgroundColor: '#333' }]}
+                            onPress={() => {
+                                setIsControlsExpanded(false);
+                                setEditMode(false);
+                            }}
+                        >
+                            <Ionicons name="close" size={18} color="white" />
+                        </Pressable>
+                    </View>
+                )}
             </View>
 
             <Modal visible={showBuildingMenu} animationType="slide" transparent>
@@ -347,6 +383,12 @@ export const CityBuilder: React.FC = () => {
                 buildingType={interactingBuilding?.type as any}
                 buildingName={interactingBuilding?.name}
             />
+
+            {/* Simulation Overlay */}
+            <SimulationDashboard
+                visible={showSimDashboard}
+                onClose={() => setShowSimDashboard(false)}
+            />
         </View>
     );
 };
@@ -360,8 +402,36 @@ const styles = StyleSheet.create({
     flex1: { flex: 1 },
     building: { position: 'absolute' },
     delete: { position: 'absolute', top: -5, right: -5, backgroundColor: 'white', borderRadius: 12 },
-    footer: { position: 'absolute', bottom: 110, left: 10, right: 10, flexDirection: 'row', justifyContent: 'center', gap: 8, zIndex: 200, backgroundColor: 'rgba(255,255,255,0.85)', padding: 12, borderRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
-    btn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1CB0F6', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, shadowOpacity: 0.2, elevation: 5 },
+    footer: { position: 'absolute', bottom: 100, left: 20, right: 20, zIndex: 200 },
+    collapsedFooter: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
+    expandedFooter: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        padding: 12,
+        borderRadius: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    mainFab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        borderRadius: 28,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    fabText: { color: 'white', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
+    btn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1CB0F6', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, shadowOpacity: 0.2, elevation: 5 },
     btnText: { color: 'white', fontWeight: 'bold', fontSize: 13 },
     modal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { backgroundColor: 'white', borderTopLeftRadius: 30, borderTopRightRadius: 30, height: '70%', paddingBottom: 30 },

@@ -1,3 +1,4 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -6,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     FadeIn,
     FadeInUp,
@@ -719,16 +720,12 @@ export default function QuizScreen() {
         const earnedXP = Math.round((score / totalQuestions) * quiz.xpReward);
         updatePlayerMoney(earnedXP * 0.1, 'earn', `Quiz: ${quiz.title}`);
 
-        // Use setTimeout to ensure navigation happens after state updates
-        setTimeout(() => {
-            try {
-                router.push('/(tabs)/quests');
-            } catch (error) {
-                console.error('Navigation error:', error);
-                // Fallback: try going back
-                router.back();
-            }
-        }, 100);
+        // Use back() since quiz is pushed onto stack, or dismissTo for web
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/(tabs)/quests');
+        }
     };
 
     const shakeStyle = useAnimatedStyle(() => ({
@@ -752,266 +749,265 @@ export default function QuizScreen() {
         const showConfetti = percentage >= 80; // Show confetti for 80%+ scores
 
         return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+            <ScreenWrapper>
+                <View style={styles.container}>
+                    <StatusBar style="dark" />
 
-                {/* Confetti Animation - only for high scores */}
-                {showConfetti && (
-                    <LottieView
-                        ref={confettiRef}
-                        source={require('@/assets/animations/confetti.json')}
-                        style={styles.confetti}
-                        autoPlay
-                        loop={false}
-                    />
-                )}
+                    {/* Confetti Animation - only for high scores */}
+                    {showConfetti && (
+                        <LottieView
+                            ref={confettiRef}
+                            source={require('@/assets/animations/confetti.json')}
+                            style={styles.confetti}
+                            autoPlay
+                            loop={false}
+                        />
+                    )}
 
-                <SafeAreaView style={styles.safeArea}>
-                    <Animated.View
-                        style={styles.resultContainer}
-                        entering={FadeInUp.delay(200).duration(500)}
-                    >
-                        {/* Result Icon */}
-                        <View style={[styles.resultIconCircle, { backgroundColor: result.color + '20' }]}>
-                            <Ionicons name={result.icon as any} size={60} color={result.color} />
-                        </View>
-
-                        <Text style={[styles.resultTitle, { color: result.color }]}>{result.text}</Text>
-
-                        {/* Score Card - Redesigned */}
-                        <View style={styles.scoreCardNew}>
-                            <View style={styles.scoreCircle}>
-                                <Text style={styles.scorePercentage}>{Math.round(percentage)}%</Text>
-                                <Text style={styles.scoreSubtext}>{score}/{totalQuestions} correct</Text>
-                            </View>
-                        </View>
-
-                        {/* XP Earned Card */}
-                        <LinearGradient
-                            colors={['#FFB800', '#FF9600']}
-                            style={styles.xpCardNew}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
+                    <SafeAreaView style={styles.safeArea}>
+                        <Animated.View
+                            style={styles.resultContainer}
+                            entering={FadeInUp.delay(200).duration(500)}
                         >
-                            <View style={styles.xpIconBox}>
-                                <Ionicons name="star" size={28} color="#FFB800" />
+                            {/* Result Icon */}
+                            <View style={[styles.resultIconCircle, { backgroundColor: result.color + '20' }]}>
+                                <Ionicons name={result.icon as any} size={60} color={result.color} />
                             </View>
-                            <View style={styles.xpTextBox}>
-                                <Text style={styles.xpLabelNew}>XP EARNED</Text>
-                                <Text style={styles.xpValueNew}>+{earnedXP} XP</Text>
+
+                            <Text style={[styles.resultTitle, { color: result.color }]}>{result.text}</Text>
+
+                            {/* Score Card - Redesigned */}
+                            <View style={styles.scoreCardNew}>
+                                <View style={styles.scoreCircle}>
+                                    <Text style={styles.scorePercentage}>{Math.round(percentage)}%</Text>
+                                    <Text style={styles.scoreSubtext}>{score}/{totalQuestions} correct</Text>
+                                </View>
                             </View>
-                        </LinearGradient>
 
-                        {/* Question Review */}
-                        <Text style={styles.reviewTitle}>Question Review</Text>
-                        <View style={styles.reviewGrid}>
-                            {quiz.questions.map((q, idx) => {
-                                const userAnswer = answers[idx];
-                                const isCorrect = userAnswer === q.correct;
-                                const bgColor = userAnswer === null ? '#AFAFAF' : isCorrect ? '#58CC02' : '#FF4B4B';
-                                const icon = userAnswer === null ? 'time-outline' : isCorrect ? 'checkmark' : 'close';
-
-                                return (
-                                    <View
-                                        key={idx}
-                                        style={[styles.reviewDot, { backgroundColor: bgColor }]}
-                                    >
-                                        <Ionicons name={icon as any} size={18} color="white" />
-                                    </View>
-                                );
-                            })}
-                        </View>
-
-                        {/* Action Buttons */}
-                        <View style={styles.resultActions}>
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.retryBtn,
-                                    { transform: [{ scale: pressed ? 0.96 : 1 }] }
-                                ]}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                    // Reset quiz
-                                    setCurrentQuestion(0);
-                                    setSelectedAnswer(null);
-                                    setShowResult(false);
-                                    setScore(0);
-                                    setAnswers([]);
-                                    setTimeLeft(TIMER_DURATION);
-                                    setQuizComplete(false);
-                                    setShowExplanation(false);
-                                }}
+                            {/* XP Earned Card */}
+                            <LinearGradient
+                                colors={['#FFB800', '#FF9600']}
+                                style={styles.xpCardNew}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
                             >
-                                <Ionicons name="refresh" size={22} color="#1CB0F6" />
-                                <Text style={styles.retryBtnText}>Try Again</Text>
-                            </Pressable>
+                                <View style={styles.xpIconBox}>
+                                    <Ionicons name="star" size={28} color="#FFB800" />
+                                </View>
+                                <View style={styles.xpTextBox}>
+                                    <Text style={styles.xpLabelNew}>XP EARNED</Text>
+                                    <Text style={styles.xpValueNew}>+{earnedXP} XP</Text>
+                                </View>
+                            </LinearGradient>
 
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.finishBtn,
-                                    { transform: [{ scale: pressed ? 0.96 : 1 }] }
-                                ]}
-                                onPress={handleFinish}
-                            >
-                                <Text style={styles.finishBtnText}>Done</Text>
-                                <Ionicons name="checkmark-circle" size={22} color="white" />
-                            </Pressable>
-                        </View>
-                    </Animated.View>
-                </SafeAreaView>
-            </View>
+                            {/* Question Review */}
+                            <Text style={styles.reviewTitle}>Question Review</Text>
+                            <View style={styles.reviewGrid}>
+                                {quiz.questions.map((q, idx) => {
+                                    const userAnswer = answers[idx];
+                                    const isCorrect = userAnswer === q.correct;
+                                    const bgColor = userAnswer === null ? '#AFAFAF' : isCorrect ? '#58CC02' : '#FF4B4B';
+                                    const icon = userAnswer === null ? 'time-outline' : isCorrect ? 'checkmark' : 'close';
+
+                                    return (
+                                        <View
+                                            key={idx}
+                                            style={[styles.reviewDot, { backgroundColor: bgColor }]}
+                                        >
+                                            <Ionicons name={icon as any} size={18} color="white" />
+                                        </View>
+                                    );
+                                })}
+                            </View>
+
+                            {/* Action Buttons */}
+                            <View style={styles.resultActions}>
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.retryBtn,
+                                        { transform: [{ scale: pressed ? 0.96 : 1 }] }
+                                    ]}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                        // Reset quiz
+                                        setCurrentQuestion(0);
+                                        setSelectedAnswer(null);
+                                        setShowResult(false);
+                                        setScore(0);
+                                        setAnswers([]);
+                                        setTimeLeft(TIMER_DURATION);
+                                        setQuizComplete(false);
+                                        setShowExplanation(false);
+                                    }}
+                                >
+                                    <Ionicons name="refresh" size={22} color="#1CB0F6" />
+                                    <Text style={styles.retryBtnText}>Try Again</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.finishBtn,
+                                        { transform: [{ scale: pressed ? 0.96 : 1 }] }
+                                    ]}
+                                    onPress={handleFinish}
+                                >
+                                    <Text style={styles.finishBtnText}>Done</Text>
+                                    <Ionicons name="checkmark-circle" size={22} color="white" />
+                                </Pressable>
+                            </View>
+                        </Animated.View>
+                    </SafeAreaView>
+                </View>
+            </ScreenWrapper>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <StatusBar style="dark" />
-            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScreenWrapper>
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+                <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
 
-                {/* Header */}
-                <View style={styles.header}>
-                    <Pressable
-                        style={({ pressed }) => [styles.closeBtn, { opacity: pressed ? 0.6 : 1 }]}
-                        onPress={() => {
-                            Alert.alert(
-                                'Quit Quiz?',
-                                'Your progress will be lost.',
-                                [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    { text: 'Quit', style: 'destructive', onPress: () => router.back() }
-                                ]
-                            );
-                        }}
-                    >
-                        <Ionicons name="close" size={28} color="#1F1F1F" />
-                    </Pressable>
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Pressable
+                            style={({ pressed }) => [styles.closeBtn, { opacity: pressed ? 0.6 : 1 }]}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                // Use replace for reliable navigation
+                                router.replace('/(tabs)/quests');
+                            }}
+                        >
+                            <Ionicons name="close" size={28} color="#1F1F1F" />
+                        </Pressable>
 
-                    <View style={styles.progressBarContainer}>
-                        <View style={styles.progressBar}>
-                            <Animated.View
-                                style={[
-                                    styles.progressFill,
-                                    { width: `${progress * 100}%`, backgroundColor: quiz.color }
-                                ]}
-                            />
-                        </View>
-                        <View style={styles.progressBadgeRow}>
-                            <View style={[styles.miniBadge, { backgroundColor: quiz.color + '20' }]}>
-                                <Text style={[styles.miniBadgeText, { color: quiz.color }]}>{currentQuestion + 1}/{totalQuestions}</Text>
-                                <Ionicons name={quiz.icon as any} size={12} color={quiz.color} />
+                        <View style={styles.progressBarContainer}>
+                            <View style={styles.progressBar}>
+                                <Animated.View
+                                    style={[
+                                        styles.progressFill,
+                                        { width: `${progress * 100}%`, backgroundColor: quiz.color }
+                                    ]}
+                                />
+                            </View>
+                            <View style={styles.progressBadgeRow}>
+                                <View style={[styles.miniBadge, { backgroundColor: quiz.color + '20' }]}>
+                                    <Text style={[styles.miniBadgeText, { color: quiz.color }]}>{currentQuestion + 1}/{totalQuestions}</Text>
+                                    <Ionicons name={quiz.icon as any} size={12} color={quiz.color} />
+                                </View>
                             </View>
                         </View>
+
+                        <CircularTimer progress={timerProgress} color={timeLeft <= 5 ? '#FF4B4B' : quiz.color} />
                     </View>
 
-                    <CircularTimer progress={timerProgress} color={timeLeft <= 5 ? '#FF4B4B' : quiz.color} />
-                </View>
+                    {/* Question Card */}
+                    <Animated.View
+                        style={[styles.questionContainer, shakeStyle]}
+                        key={currentQuestion}
+                        entering={SlideInRight.duration(300)}
+                    >
+                        <View style={[styles.questionIconBox, { backgroundColor: quiz.color + '30' }]}>
+                            <Ionicons name={quiz.icon as any} size={32} color={quiz.color.replace('66', '')} />
+                        </View>
 
-                {/* Question Card */}
-                <Animated.View
-                    style={[styles.questionContainer, shakeStyle]}
-                    key={currentQuestion}
-                    entering={SlideInRight.duration(300)}
-                >
-                    <View style={[styles.questionIconBox, { backgroundColor: quiz.color + '30' }]}>
-                        <Ionicons name={quiz.icon as any} size={32} color={quiz.color.replace('66', '')} />
-                    </View>
+                        <Text style={styles.questionText}>{question.question}</Text>
 
-                    <Text style={styles.questionText}>{question.question}</Text>
+                        {/* Options */}
+                        <View style={styles.optionsContainer}>
+                            {question.options.map((option, idx) => {
+                                const isSelected = selectedAnswer === idx;
+                                const isCorrect = idx === question.correct;
+                                const showFeedback = showExplanation;
 
-                    {/* Options */}
-                    <View style={styles.optionsContainer}>
-                        {question.options.map((option, idx) => {
-                            const isSelected = selectedAnswer === idx;
-                            const isCorrect = idx === question.correct;
-                            const showFeedback = showExplanation;
+                                let bgColor = 'white';
+                                let borderColor = '#E5E5E5';
+                                let textColor = '#1F1F1F';
 
-                            let bgColor = 'white';
-                            let borderColor = '#E5E5E5';
-                            let textColor = '#1F1F1F';
-
-                            if (showFeedback) {
-                                if (isCorrect) {
-                                    bgColor = '#E8F5E9';
-                                    borderColor = '#58CC02';
-                                    textColor = '#46A302';
-                                } else if (isSelected && !isCorrect) {
-                                    bgColor = '#FFEBEE';
-                                    borderColor = '#FF4B4B';
-                                    textColor = '#D33131';
+                                if (showFeedback) {
+                                    if (isCorrect) {
+                                        bgColor = '#E8F5E9';
+                                        borderColor = '#58CC02';
+                                        textColor = '#46A302';
+                                    } else if (isSelected && !isCorrect) {
+                                        bgColor = '#FFEBEE';
+                                        borderColor = '#FF4B4B';
+                                        textColor = '#D33131';
+                                    }
+                                } else if (isSelected) {
+                                    borderColor = quiz.color;
                                 }
-                            } else if (isSelected) {
-                                borderColor = quiz.color;
-                            }
 
-                            return (
-                                <Pressable
-                                    key={idx}
-                                    style={[
-                                        styles.optionBtn,
-                                        { backgroundColor: bgColor, borderColor }
-                                    ]}
-                                    onPress={() => handleAnswer(idx)}
-                                    disabled={showExplanation}
-                                >
-                                    <View style={[
-                                        styles.optionLetter,
-                                        showFeedback && isCorrect && { backgroundColor: '#58CC02' },
-                                        showFeedback && isSelected && !isCorrect && { backgroundColor: '#FF4B4B' }
-                                    ]}>
-                                        <Text style={[
-                                            styles.optionLetterText,
-                                            (showFeedback && (isCorrect || isSelected)) && { color: 'white' }
+                                return (
+                                    <Pressable
+                                        key={idx}
+                                        style={[
+                                            styles.optionBtn,
+                                            { backgroundColor: bgColor, borderColor }
+                                        ]}
+                                        onPress={() => handleAnswer(idx)}
+                                        disabled={showExplanation}
+                                    >
+                                        <View style={[
+                                            styles.optionLetter,
+                                            showFeedback && isCorrect && { backgroundColor: '#58CC02' },
+                                            showFeedback && isSelected && !isCorrect && { backgroundColor: '#FF4B4B' }
                                         ]}>
-                                            {String.fromCharCode(65 + idx)}
-                                        </Text>
-                                    </View>
-                                    <Text style={[styles.optionText, { color: textColor }]}>{option}</Text>
-                                    {showFeedback && isCorrect && (
-                                        <Ionicons name="checkmark-circle" size={24} color="#58CC02" />
-                                    )}
-                                    {showFeedback && isSelected && !isCorrect && (
-                                        <Ionicons name="close-circle" size={24} color="#FF4B4B" />
-                                    )}
-                                </Pressable>
-                            );
-                        })}
-                    </View>
+                                            <Text style={[
+                                                styles.optionLetterText,
+                                                (showFeedback && (isCorrect || isSelected)) && { color: 'white' }
+                                            ]}>
+                                                {String.fromCharCode(65 + idx)}
+                                            </Text>
+                                        </View>
+                                        <Text style={[styles.optionText, { color: textColor }]}>{option}</Text>
+                                        {showFeedback && isCorrect && (
+                                            <Ionicons name="checkmark-circle" size={24} color="#58CC02" />
+                                        )}
+                                        {showFeedback && isSelected && !isCorrect && (
+                                            <Ionicons name="close-circle" size={24} color="#FF4B4B" />
+                                        )}
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
 
-                    {/* Explanation */}
+                        {/* Explanation */}
+                        {showExplanation && (
+                            <Animated.View
+                                entering={FadeIn.duration(300)}
+                                style={styles.explanationCard}
+                            >
+                                <Ionicons name="bulb" size={20} color="#F59E0B" />
+                                <Text style={styles.explanationText}>{question.explanation}</Text>
+                            </Animated.View>
+                        )}
+                    </Animated.View>
+
+                    {/* Continue Button */}
                     {showExplanation && (
                         <Animated.View
-                            entering={FadeIn.duration(300)}
-                            style={styles.explanationCard}
+                            entering={FadeInUp.duration(300)}
+                            style={styles.continueContainer}
                         >
-                            <Ionicons name="bulb" size={20} color="#F59E0B" />
-                            <Text style={styles.explanationText}>{question.explanation}</Text>
+                            <Pressable
+                                style={({ pressed }) => [
+                                    styles.continueBtn,
+                                    { backgroundColor: quiz.color, transform: [{ scale: pressed ? 0.96 : 1 }] }
+                                ]}
+                                onPress={handleContinue}
+                            >
+                                <Text style={styles.continueBtnText}>
+                                    {currentQuestion < totalQuestions - 1 ? 'Continue' : 'See Results'}
+                                </Text>
+                                <Ionicons name="arrow-forward" size={24} color="#1F1F1F" />
+                            </Pressable>
                         </Animated.View>
                     )}
-                </Animated.View>
 
-                {/* Continue Button */}
-                {showExplanation && (
-                    <Animated.View
-                        entering={FadeInUp.duration(300)}
-                        style={styles.continueContainer}
-                    >
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.continueBtn,
-                                { backgroundColor: quiz.color, transform: [{ scale: pressed ? 0.96 : 1 }] }
-                            ]}
-                            onPress={handleContinue}
-                        >
-                            <Text style={styles.continueBtnText}>
-                                {currentQuestion < totalQuestions - 1 ? 'Continue' : 'See Results'}
-                            </Text>
-                            <Ionicons name="arrow-forward" size={24} color="#1F1F1F" />
-                        </Pressable>
-                    </Animated.View>
-                )}
-
-            </SafeAreaView>
-        </View>
+                </SafeAreaView>
+            </View>
+        </ScreenWrapper>
     );
 }
 

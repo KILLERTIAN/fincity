@@ -1,5 +1,8 @@
+import { MoodMeter } from '@/components/game/MoodMeter';
 import { AddMoneyModal } from '@/components/ui/AddMoneyModal';
 import { GameCard } from '@/components/ui/game-card';
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
+import { TransferMoneyModal } from '@/components/ui/TransferMoneyModal';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -7,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +21,10 @@ export default function HomeScreen() {
   const { player } = gameState;
   const router = useRouter();
   const [showAddMoney, setShowAddMoney] = useState(false);
+  const [showTransferMoney, setShowTransferMoney] = useState(false);
+
+  const { width: screenWidth } = useWindowDimensions();
+  const isLargeScreen = screenWidth > 768;
 
   // Animated values for savings card
   const scale = useSharedValue(1);
@@ -30,209 +37,228 @@ export default function HomeScreen() {
     setShowAddMoney(true);
   };
 
+  const handleSendMoney = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowTransferMoney(true);
+  };
+
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar style="dark" />
+    <ScreenWrapper>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+        <StatusBar style="dark" />
 
-      <LinearGradient
-        colors={['#EBF5FF', '#F8FBFF', '#FFFFFF']}
-        style={StyleSheet.absoluteFill}
-      />
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={{ height: 10 }} />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={{ height: 10 }} />
-
-        {/* User Profile Info */}
-        <View style={styles.profileHeader}>
-          <View style={styles.profileInfo}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.avatarMainContainer,
-                { transform: [{ scale: pressed ? 0.95 : 1 }] }
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/profile');
-              }}
-            >
-              <View style={styles.avatarContainer}>
-                <Image
-                  source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${player.avatar}&backgroundColor=FBD4A3` }}
-                  style={styles.avatarImg}
-                />
-              </View>
-              <View style={styles.avatarLevelBadge}>
-                <Text style={styles.avatarLevelText}>{player.level}</Text>
-              </View>
-            </Pressable>
-            <View style={styles.textColumn}>
-              <Text style={styles.levelTag}>LEVEL {player.level} MASTER</Text>
-              <View style={styles.greetingRow}>
-                <Text style={styles.greetingText}>Hi, {player.name}!</Text>
-                <Ionicons name="sparkles" size={20} color="#FFB800" />
+          {/* User Profile Info */}
+          <View style={styles.profileHeader}>
+            <View style={styles.profileInfo}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.avatarMainContainer,
+                  { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/profile');
+                }}
+              >
+                <View style={styles.avatarContainer}>
+                  <Image
+                    source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${player.avatar}&backgroundColor=FBD4A3` }}
+                    style={styles.avatarImg}
+                  />
+                </View>
+                <View style={styles.avatarLevelBadge}>
+                  <Text style={styles.avatarLevelText}>{player.level}</Text>
+                </View>
+              </Pressable>
+              <View style={styles.textColumn}>
+                <Text style={styles.levelTag}>LEVEL {player.level} MASTER</Text>
+                <View style={styles.greetingRow}>
+                  <Text style={styles.greetingText}>Hi, {player.name}!</Text>
+                  <Ionicons name="sparkles" size={20} color="#FFB800" />
+                </View>
               </View>
             </View>
-          </View>
-          <IconButton style={styles.notifButton} onPress={() => router.push('/notifications')}>
-            <Ionicons name="notifications" size={24} color="#1F1F1F" />
-            <View style={styles.notifBadge} />
-          </IconButton>
-        </View>
-
-        <Animated.View style={cardStyle}>
-          <LinearGradient
-            colors={['#B8FF66', '#A5F84D']}
-            style={styles.savingsCard}
-          >
-            {/* Doodle Background */}
-            <View style={styles.doodleContainer}>
-              <Ionicons name="star" size={24} color="rgba(70,163,2,0.1)" style={styles.doodleIcon1} />
-              <Ionicons name="cash" size={32} color="rgba(70,163,2,0.1)" style={styles.doodleIcon2} />
-              <Ionicons name="diamond" size={20} color="rgba(70,163,2,0.1)" style={styles.doodleIcon3} />
-              <Ionicons name="wallet" size={28} color="rgba(70,163,2,0.1)" style={styles.doodleIcon4} />
-              <Ionicons name="trending-up" size={40} color="rgba(70,163,2,0.1)" style={styles.doodleIcon5} />
-              <Ionicons name="trophy" size={24} color="rgba(70,163,2,0.1)" style={styles.doodleIcon6} />
-              <Ionicons name="leaf" size={20} color="rgba(70,163,2,0.1)" style={styles.doodleIcon7} />
-              <Ionicons name="rocket" size={28} color="rgba(70,163,2,0.1)" style={styles.doodleIcon8} />
-              <Ionicons name="shield-checkmark" size={22} color="rgba(70,163,2,0.1)" style={styles.doodleIcon9} />
-              <Ionicons name="stats-chart" size={24} color="rgba(70,163,2,0.1)" style={styles.doodleIcon10} />
-            </View>
-
-            <Text style={styles.savingsLabel}>TOTAL SAVINGS</Text>
-            <Text style={styles.savingsAmount}>₹{player.money.toLocaleString('en-IN')}</Text>
-
-            <IconButton
-              style={styles.addMoneyBtn}
-              onPress={handleAddMoney}
-            >
-              <Ionicons name="add-circle" size={20} color="white" />
-              <Text style={styles.addMoneyText}>Add Money</Text>
+            <IconButton style={styles.notifButton} onPress={() => router.push('/notifications')}>
+              <Ionicons name="notifications" size={24} color="#1F1F1F" />
+              <View style={styles.notifBadge} />
             </IconButton>
+          </View>
+
+          <Animated.View style={cardStyle}>
+            <LinearGradient
+              colors={['#B8FF66', '#A5F84D']}
+              style={styles.savingsCard}
+            >
+              {/* Doodle Background */}
+              <View style={styles.doodleContainer}>
+                <Ionicons name="star" size={24} color="rgba(70,163,2,0.1)" style={styles.doodleIcon1} />
+                <Ionicons name="cash" size={32} color="rgba(70,163,2,0.1)" style={styles.doodleIcon2} />
+                <Ionicons name="diamond" size={20} color="rgba(70,163,2,0.1)" style={styles.doodleIcon3} />
+                <Ionicons name="wallet" size={28} color="rgba(70,163,2,0.1)" style={styles.doodleIcon4} />
+                <Ionicons name="trending-up" size={40} color="rgba(70,163,2,0.1)" style={styles.doodleIcon5} />
+                <Ionicons name="trophy" size={24} color="rgba(70,163,2,0.1)" style={styles.doodleIcon6} />
+                <Ionicons name="leaf" size={20} color="rgba(70,163,2,0.1)" style={styles.doodleIcon7} />
+                <Ionicons name="rocket" size={28} color="rgba(70,163,2,0.1)" style={styles.doodleIcon8} />
+                <Ionicons name="shield-checkmark" size={22} color="rgba(70,163,2,0.1)" style={styles.doodleIcon9} />
+                <Ionicons name="stats-chart" size={24} color="rgba(70,163,2,0.1)" style={styles.doodleIcon10} />
+              </View>
+
+              <Text style={styles.savingsLabel}>TOTAL SAVINGS</Text>
+              <Text style={styles.savingsAmount}>₹{player.money.toLocaleString('en-IN')}</Text>
+
+              <IconButton
+                style={styles.addMoneyBtn}
+                onPress={handleAddMoney}
+              >
+                <Ionicons name="add-circle" size={20} color="white" />
+                <Text style={styles.addMoneyText}>Add Money</Text>
+              </IconButton>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Mood Meter */}
+          <MoodMeter mood={player.mood} />
+          <View style={{ height: 24 }} />
+
+          {/* Quick Actions */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+          </View>
+          <View style={styles.quickActionsRow}>
+            <ActionCard
+              icon="wallet"
+              label="Save"
+              color="#FF6B35"
+              bgColor="#FFF0EB"
+              onPress={() => router.push('/wallet')}
+            />
+            <ActionCard
+              icon="send"
+              label="Send"
+              color="#58CC02"
+              bgColor="#E8F5E9"
+              onPress={handleSendMoney}
+            />
+            <ActionCard
+              icon="bag-handle"
+              label="Spend"
+              color="#FFB800"
+              bgColor="#FFF9E6"
+              onPress={() => router.push('/shop')}
+            />
+            <ActionCard
+              icon="rocket"
+              label="Invest"
+              color="#1CB0F6"
+              bgColor="#E6F4FF"
+              onPress={() => router.push('/invest')}
+            />
+          </View>
+
+          {/* Savings Goal */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Savings Goal</Text>
+            <Pressable><Text style={styles.seeAllText}>See All</Text></Pressable>
+          </View>
+          <Pressable
+            style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push('/savings-journey');
+            }}
+          >
+            <GameCard style={styles.goalCardContainer}>
+              <View style={styles.goalCardMain}>
+                <View style={styles.goalIconBox}>
+                  <Ionicons name="bicycle" size={28} color="#FF9600" />
+                </View>
+                <View style={styles.goalDetail}>
+                  <View style={styles.goalTopRow}>
+                    <Text style={styles.goalName}>New Bike</Text>
+                    <Text style={styles.goalProgressText}>₹80 / ₹150</Text>
+                  </View>
+                  <View style={styles.goalTrack}>
+                    <View style={[styles.goalFill, { width: '53%' }]} />
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.goalQuoteBox}>
+                <Ionicons name="sparkles" size={14} color="#FF9600" />
+                <Text style={styles.goalQuoteText}>You're halfway there! Keep it up!</Text>
+              </View>
+            </GameCard>
+          </Pressable>
+
+          {/* Streak Component */}
+          <LinearGradient
+            colors={['#FF8800', '#FF5500']}
+            style={styles.streakBanner}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <View style={styles.streakLeft}>
+              <View style={styles.streakIconCircle}>
+                <Ionicons name="flame" size={24} color="#FF4B4B" />
+              </View>
+              <View>
+                <Text style={styles.streakTitle}>7 Day Streak!</Text>
+                <Text style={styles.streakSubtitle}>Earned +10 coins today</Text>
+              </View>
+            </View>
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakLevelText}>Level 5</Text>
+            </View>
           </LinearGradient>
-        </Animated.View>
 
-        {/* Quick Actions */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-        </View>
-        <View style={styles.quickActionsGrid}>
-          <ActionCard
-            icon="wallet"
-            label="Save"
-            color="#FF6B35"
-            bgColor="#FFF0EB"
-            onPress={() => router.push('/wallet')}
-          />
-          <ActionCard
-            icon="bag-handle"
-            label="Spend"
-            color="#FFB800"
-            bgColor="#FFF9E6"
-            onPress={() => router.push('/shop')}
-          />
-          <ActionCard
-            icon="rocket"
-            label="Invest"
-            color="#1CB0F6"
-            bgColor="#E6F4FF"
-            onPress={() => router.push('/invest')}
-          />
-        </View>
-
-        {/* Savings Goal */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Savings Goal</Text>
-          <Pressable><Text style={styles.seeAllText}>See All</Text></Pressable>
-        </View>
-        <Pressable
-          style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push('/savings-journey');
-          }}
-        >
-          <GameCard style={styles.goalCardContainer}>
-            <View style={styles.goalCardMain}>
-              <View style={styles.goalIconBox}>
-                <Ionicons name="bicycle" size={28} color="#FF9600" />
-              </View>
-              <View style={styles.goalDetail}>
-                <View style={styles.goalTopRow}>
-                  <Text style={styles.goalName}>New Bike</Text>
-                  <Text style={styles.goalProgressText}>₹80 / ₹150</Text>
-                </View>
-                <View style={styles.goalTrack}>
-                  <View style={[styles.goalFill, { width: '53%' }]} />
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.goalQuoteBox}>
-              <Ionicons name="sparkles" size={14} color="#FF9600" />
-              <Text style={styles.goalQuoteText}>You're halfway there! Keep it up!</Text>
-            </View>
-          </GameCard>
-        </Pressable>
-
-        {/* Streak Component */}
-        <LinearGradient
-          colors={['#FF8800', '#FF5500']}
-          style={styles.streakBanner}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <View style={styles.streakLeft}>
-            <View style={styles.streakIconCircle}>
-              <Ionicons name="flame" size={24} color="#FF4B4B" />
-            </View>
-            <View>
-              <Text style={styles.streakTitle}>7 Day Streak!</Text>
-              <Text style={styles.streakSubtitle}>Earned +10 coins today</Text>
-            </View>
-          </View>
-          <View style={styles.streakBadge}>
-            <Text style={styles.streakLevelText}>Level 5</Text>
-          </View>
-        </LinearGradient>
-
-        <View style={{ height: 16 }} />
+          <View style={{ height: 16 }} />
 
 
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
 
-      {/* Add Money Modal */}
-      <AddMoneyModal
-        visible={showAddMoney}
-        onClose={() => setShowAddMoney(false)}
-      />
-    </SafeAreaView>
+        {/* Add Money Modal */}
+        <AddMoneyModal
+          visible={showAddMoney}
+          onClose={() => setShowAddMoney(false)}
+        />
+
+        {/* Transfer Money Modal */}
+        <TransferMoneyModal
+          visible={showTransferMoney}
+          onClose={() => setShowTransferMoney(false)}
+        />
+      </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const ActionCard = ({ icon, label, color, bgColor, onPress }: { icon: any, label: string, color: string, bgColor: string, onPress: () => void }) => (
-  <Pressable
-    style={({ pressed }) => [
-      styles.actionCardWrapper,
-      { transform: [{ scale: pressed ? 0.95 : 1 }] }
-    ]}
-    onPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress();
-    }}
-  >
-    <View style={[styles.actionCard, { backgroundColor: 'white' }]}>
-      <View style={[styles.actionIconBox, { backgroundColor: bgColor }]}>
-        <Ionicons name={icon} size={32} color={color} />
+  <View style={styles.actionItem}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.actionCircle,
+        { backgroundColor: 'white', transform: [{ scale: pressed ? 0.92 : 1 }] }
+      ]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+    >
+      <View style={[styles.actionIconInner, { backgroundColor: bgColor }]}>
+        <Ionicons name={icon} size={26} color={color} />
       </View>
-      <Text style={styles.actionLabel}>{label}</Text>
-    </View>
-  </Pressable>
+    </Pressable>
+    <Text style={styles.actionLabel}>{label}</Text>
+  </View>
 );
 
 const IconButton = ({ children, onPress, style }: { children: React.ReactNode, onPress: () => void, style?: any }) => (
@@ -253,11 +279,14 @@ const IconButton = ({ children, onPress, style }: { children: React.ReactNode, o
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FBFF',
+    backgroundColor: '#F0F9EB',
+  },
+  safeArea: {
+    flex: 1,
   },
   bgContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F8FBFF',
+    backgroundColor: '#F0F9EB',
   },
   whiteBg: {
     flex: 1,
@@ -391,37 +420,40 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#FFB800',
   },
-  quickActionsGrid: {
+  quickActionsRow: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
     marginBottom: 24,
+    paddingHorizontal: 4,
   },
-  actionCardWrapper: {
-    flex: 1,
-  },
-  actionCard: {
-    padding: 16,
+  actionItem: {
     alignItems: 'center',
-    borderRadius: 32,
-    borderBottomWidth: 6,
+    gap: 8,
+  },
+  actionCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
     borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
-  actionIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+  actionIconInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
   actionLabel: {
-    fontSize: 14,
-    fontWeight: '900',
+    fontSize: 13,
+    fontWeight: '800',
     color: '#1F1F1F',
   },
   goalCardContainer: {
@@ -634,6 +666,61 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     color: 'white',
+  },
+  moodSection: {
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 32,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  moodHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  moodTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#1F1F1F',
+  },
+  moodBadge: {
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  moodValueText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#1F1F1F',
+  },
+  moodTrack: {
+    height: 14,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 7,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  moodFill: {
+    height: '100%',
+    borderRadius: 7,
+  },
+  moodLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  moodLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#8B8B8B',
   },
   greetingRow: {
     flexDirection: 'row',

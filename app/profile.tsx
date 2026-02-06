@@ -1,9 +1,9 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { authApi } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -107,21 +107,8 @@ export default function ProfileScreen() {
     const achievements = gameState.achievements?.filter(a => a.unlocked) || [];
 
     return (
-        <View style={styles.container}>
-            <StatusBar style="light" />
-
-            {/* Premium Mesh Gradient Background */}
-            <LinearGradient
-                colors={['#D0E7FF', '#F0F7FF', '#F8FBFF']}
-                style={styles.headerBg}
-            />
-            <LinearGradient
-                colors={['rgba(28, 176, 246, 0.1)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.meshGradient}
-            />
-
+        <ScreenWrapper>
+            <StatusBar style="dark" />
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 {/* Top Bar */}
                 <View style={styles.topBar}>
@@ -391,14 +378,17 @@ export default function ProfileScreen() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FBFF',
+        backgroundColor: '#F0F9EB',
+    },
+    safeArea: {
+        flex: 1,
     },
     headerBg: {
         position: 'absolute',
@@ -413,9 +403,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 350,
-    },
-    safeArea: {
-        flex: 1,
     },
     topBar: {
         flexDirection: 'row',

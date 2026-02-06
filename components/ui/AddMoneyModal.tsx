@@ -80,6 +80,7 @@ export const AddMoneyModal: React.FC<AddMoneyModalProps> = ({ visible, onClose }
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.container}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
             >
                 <Animated.View
                     entering={FadeIn.duration(200)}
@@ -89,7 +90,7 @@ export const AddMoneyModal: React.FC<AddMoneyModalProps> = ({ visible, onClose }
                     <Pressable style={styles.backdrop} onPress={handleClose} />
 
                     <Animated.View
-                        entering={SlideInDown.springify().damping(20).stiffness(200)}
+                        entering={SlideInDown.duration(300)}
                         exiting={SlideOutDown.duration(200)}
                         style={styles.modal}
                     >
@@ -243,11 +244,16 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
     },
     modal: {
-        backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
+        backgroundColor: '#FAFBFC',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
         maxHeight: '85%',
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 10,
     },
     header: {
         flexDirection: 'row',

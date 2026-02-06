@@ -1,9 +1,9 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { authApi } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
@@ -20,6 +20,7 @@ import {
     StyleSheet,
     Text,
     TextInput,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import Animated, {
@@ -94,6 +95,13 @@ export default function OnboardingScreen() {
     const mascotRef = useRef<LottieView>(null);
     const cloudScale = useSharedValue(1);
     const floatY = useSharedValue(0);
+
+    // Responsive design for web
+    const { width: screenWidth } = useWindowDimensions();
+    const isWeb = Platform.OS === 'web';
+    const isLargeScreen = screenWidth > 768;
+    const mascotSize = isLargeScreen ? 180 : (isWeb ? 220 : 300);
+    const contentMaxWidth = isLargeScreen ? 480 : screenWidth;
 
     // Float animation
     React.useEffect(() => {
@@ -212,16 +220,8 @@ export default function OnboardingScreen() {
     // Slides View
     if (showSlides) {
         return (
-            <View style={styles.container}>
+            <ScreenWrapper colors={slide.colors}>
                 <StatusBar style="light" />
-
-                <LinearGradient
-                    colors={slide.colors}
-                    style={StyleSheet.absoluteFill}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                />
-
                 <SafeAreaView style={styles.safeArea}>
                     <Pressable
                         style={styles.skipBtn}
@@ -255,216 +255,238 @@ export default function OnboardingScreen() {
                         <Ionicons name="arrow-forward" size={24} color="#1F1F1F" />
                     </Pressable>
                 </SafeAreaView>
-            </View>
+            </ScreenWrapper>
         );
     }
 
     // Setup View
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-            <StatusBar style="dark" />
+        <ScreenWrapper colors={isWeb ? ['#FF9F7F', '#FFB88C', '#FFE0B2'] : ['#EBF5FF', '#F8FBFF', '#FFFFFF']}>
+            <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+                <StatusBar style="dark" />
 
-            <LinearGradient
-                colors={['#EBF5FF', '#F8FBFF', '#FFFFFF']}
-                style={styles.gradient}
-            />
+                {/* Floating Clouds - hide on web */}
+                {!isWeb && (
+                    <Animated.View style={[styles.cloud, styles.cloud1, cloudAnimatedStyle]}>
+                        <Text style={styles.cloudText}>☁️</Text>
+                    </Animated.View>
+                )}
 
-            {/* Floating Clouds */}
-            <Animated.View style={[styles.cloud, styles.cloud1, cloudAnimatedStyle]}>
-                <Text style={styles.cloudText}>☁️</Text>
-            </Animated.View>
+                {/* Mascot & Speech Bubble - Hidden on Web to save space and fix layout issues */}
+                {!isWeb && (
+                    <>
+                        <View style={[styles.mascotContainer, isLargeScreen && { marginTop: 10 }]}>
+                            <LottieView
+                                ref={mascotRef}
+                                source={require('@/assets/animations/Yay Jump Animation.json')}
+                                style={{ width: mascotSize, height: mascotSize }}
+                                autoPlay
+                                loop
+                            />
+                        </View>
 
-            {/* Mascot */}
-            <View style={styles.mascotContainer}>
-                <LottieView
-                    ref={mascotRef}
-                    source={require('@/assets/animations/Yay Jump Animation.json')}
-                    style={styles.mascot}
-                    autoPlay
-                    loop
-                />
-            </View>
+                        <View style={[
+                            styles.speechBubble,
+                            isLargeScreen && { maxWidth: contentMaxWidth, alignSelf: 'center', marginHorizontal: 20 }
+                        ]}>
+                            <View style={styles.speechBubbleTriangle} />
+                            <Text style={styles.mascotText}>
+                                {setupStep === 0 && "Welcome! Ready to join FinCity?"}
+                                {setupStep === 1 && (authMode === 'login' ? "Welcome back! Enter your details." : "Great! Let's set up your account.")}
+                                {setupStep === 2 && "Awesome! What should we call you?"}
+                                {setupStep === 3 && `Cool name, ${userName}! How old are you?`}
+                                {setupStep === 4 && "Pick an avatar that looks like you!"}
+                                {setupStep === 5 && `Whooosh! You're ready to roll, ${userName}!`}
+                            </Text>
+                        </View>
+                    </>
+                )}
 
-            {/* Speech Bubble */}
-            <View style={styles.speechBubble}>
-                <View style={styles.speechBubbleTriangle} />
-                <Text style={styles.mascotText}>
-                    {setupStep === 0 && "Welcome! Ready to join FinCity?"}
-                    {setupStep === 1 && (authMode === 'login' ? "Welcome back! Enter your details." : "Great! Let's set up your account.")}
-                    {setupStep === 2 && "Awesome! What should we call you?"}
-                    {setupStep === 3 && `Cool name, ${userName}! How old are you?`}
-                    {setupStep === 4 && "Pick an avatar that looks like you!"}
-                    {setupStep === 5 && `Whooosh! You're ready to roll, ${userName}!`}
-                </Text>
-            </View>
+                <KeyboardAvoidingView
+                    style={[
+                        styles.contentCard,
+                        isLargeScreen && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' },
+                        isWeb && {
+                            marginTop: 40,
+                            marginBottom: 40,
+                            flex: 1,
+                            maxWidth: 460,
+                            width: '90%',
+                            alignSelf: 'center',
+                            borderRadius: 30,
+                            borderBottomLeftRadius: 30,
+                            borderBottomRightRadius: 30,
+                            shadowOpacity: 0.1,
+                            elevation: 5,
+                            backgroundColor: 'white',
+                        }
+                    ]}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                        {/* Step 0: Choice */}
+                        {setupStep === 0 && (
+                            <Animated.View entering={FadeIn.duration(400)}>
+                                <Text style={styles.setupTitle}>Join the Adventure</Text>
+                                <Pressable style={styles.choiceBtnSignup} onPress={() => handleChoice('signup')}>
+                                    <Ionicons name="person-add" size={24} color="white" />
+                                    <Text style={styles.choiceBtnTextWhite}>Create New Account</Text>
+                                </Pressable>
+                                <Pressable style={styles.choiceBtnLogin} onPress={() => handleChoice('login')}>
+                                    <Ionicons name="log-in" size={24} color="#1CB0F6" />
+                                    <Text style={styles.choiceBtnTextBlue}>I already have one</Text>
+                                </Pressable>
+                                <Pressable style={styles.choiceBtnGuest} onPress={() => handleChoice('guest')}>
+                                    <Text style={styles.choiceBtnTextGray}>Play as Guest</Text>
+                                </Pressable>
+                            </Animated.View>
+                        )}
 
-            <KeyboardAvoidingView
-                style={styles.contentCard}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                    {/* Step 0: Choice */}
-                    {setupStep === 0 && (
-                        <Animated.View entering={FadeIn.duration(400)}>
-                            <Text style={styles.setupTitle}>Join the Adventure</Text>
-                            <Pressable style={styles.choiceBtnSignup} onPress={() => handleChoice('signup')}>
-                                <Ionicons name="person-add" size={24} color="white" />
-                                <Text style={styles.choiceBtnTextWhite}>Create New Account</Text>
-                            </Pressable>
-                            <Pressable style={styles.choiceBtnLogin} onPress={() => handleChoice('login')}>
-                                <Ionicons name="log-in" size={24} color="#1CB0F6" />
-                                <Text style={styles.choiceBtnTextBlue}>I already have one</Text>
-                            </Pressable>
-                            <Pressable style={styles.choiceBtnGuest} onPress={() => handleChoice('guest')}>
-                                <Text style={styles.choiceBtnTextGray}>Play as Guest</Text>
-                            </Pressable>
-                        </Animated.View>
-                    )}
-
-                    {/* Step 1: Auth Form */}
-                    {setupStep === 1 && (
-                        <Animated.View entering={FadeIn.duration(400)}>
-                            <Text style={styles.setupTitle}>{authMode === 'login' ? 'Welcome Back' : 'Sign Up'}</Text>
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="mail" size={20} color="#1CB0F6" />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Email Address"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    autoCapitalize="none"
-                                    keyboardType="email-address"
-                                />
-                            </View>
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="lock-closed" size={20} color="#1CB0F6" />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Password"
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry
-                                />
-                            </View>
-                        </Animated.View>
-                    )}
-
-                    {/* Step 2: Name Input */}
-                    {setupStep === 2 && (
-                        <Animated.View entering={FadeIn.duration(400)}>
-                            <Text style={styles.setupTitle}>Your Name</Text>
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="person" size={20} color="#1CB0F6" />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Enter your name"
-                                    value={userName}
-                                    onChangeText={setUserName}
-                                    autoFocus
-                                    maxLength={20}
-                                />
-                            </View>
-                        </Animated.View>
-                    )}
-
-                    {/* Step 3: Age */}
-                    {setupStep === 3 && (
-                        <Animated.View entering={FadeIn.duration(400)}>
-                            <Text style={styles.setupTitle}>Your Age</Text>
-                            <View style={styles.ageGrid}>
-                                {AGE_OPTIONS.map((age) => (
-                                    <Pressable
-                                        key={age}
-                                        style={[styles.ageOption, userAge === age && styles.ageOptionSelected]}
-                                        onPress={() => handleAgeSelect(age)}
-                                    >
-                                        <Text style={[styles.ageText, userAge === age && styles.ageTextSelected]}>{age}</Text>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        </Animated.View>
-                    )}
-
-                    {/* Step 4: Avatar Selection */}
-                    {setupStep === 4 && (
-                        <Animated.View entering={FadeIn.duration(400)}>
-                            <Text style={styles.setupTitle}>Pick Avatar</Text>
-                            <View style={styles.avatarGrid}>
-                                {AVATAR_OPTIONS.map((item) => (
-                                    <Pressable
-                                        key={item.seed}
-                                        style={[
-                                            styles.avatarOption,
-                                            { backgroundColor: item.bg },
-                                            selectedAvatar === item.seed && styles.avatarOptionSelected,
-                                        ]}
-                                        onPress={() => handleAvatarSelect(item.seed)}
-                                    >
-                                        <Image
-                                            source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${item.seed}&backgroundColor=${item.bg.replace('#', '')}` }}
-                                            style={styles.avatarImgSmall}
-                                        />
-                                        {selectedAvatar === item.seed && (
-                                            <View style={styles.checkmark}>
-                                                <Ionicons name="checkmark-circle" size={24} color="#58CC02" />
-                                            </View>
-                                        )}
-                                    </Pressable>
-                                ))}
-                            </View>
-                        </Animated.View>
-                    )}
-
-                    {/* Step 5: Summary */}
-                    {setupStep === 5 && (
-                        <Animated.View entering={FadeIn.duration(400)}>
-                            <View style={styles.summaryCard}>
-                                <View style={styles.bigAvatar}>
-                                    <Image
-                                        source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${selectedAvatar}&backgroundColor=${AVATAR_OPTIONS.find(a => a.seed === selectedAvatar)?.bg.replace('#', '')}` }}
-                                        style={styles.bigAvatarImg}
+                        {/* Step 1: Auth Form */}
+                        {setupStep === 1 && (
+                            <Animated.View entering={FadeIn.duration(400)}>
+                                <Text style={styles.setupTitle}>{authMode === 'login' ? 'Welcome Back' : 'Sign Up'}</Text>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="mail" size={20} color="#1CB0F6" />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Email Address"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        autoCapitalize="none"
+                                        keyboardType="email-address"
                                     />
                                 </View>
-                                <Text style={styles.summaryName}>{userName}</Text>
-                                <Text style={styles.summaryAge}>Age: {userAge}</Text>
-                            </View>
-                        </Animated.View>
-                    )}
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="lock-closed" size={20} color="#1CB0F6" />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Password"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry
+                                    />
+                                </View>
+                            </Animated.View>
+                        )}
 
-                    {/* Action Button */}
-                    {setupStep > 0 && (
-                        <Pressable
-                            style={[
-                                styles.setupNextBtn,
-                                ((setupStep === 1 && (!email || !password)) ||
-                                    (setupStep === 2 && !userName) ||
-                                    (setupStep === 3 && !userAge)) && styles.nextButtonDisabled,
-                            ]}
-                            onPress={handleSetupNext}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <>
-                                    <Text style={styles.setupNextBtnText}>
-                                        {setupStep === 5 ? "Start Adventure!" :
-                                            setupStep === 1 && authMode === 'login' ? "Sign In" : "Continue"}
-                                    </Text>
-                                    <Ionicons name="arrow-forward" size={24} color="white" />
-                                </>
-                            )}
-                        </Pressable>
-                    )}
+                        {/* Step 2: Name Input */}
+                        {setupStep === 2 && (
+                            <Animated.View entering={FadeIn.duration(400)}>
+                                <Text style={styles.setupTitle}>Your Name</Text>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="person" size={20} color="#1CB0F6" />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Enter your name"
+                                        value={userName}
+                                        onChangeText={setUserName}
+                                        autoFocus
+                                        maxLength={20}
+                                    />
+                                </View>
+                            </Animated.View>
+                        )}
 
-                    {setupStep > 1 && (
-                        <Pressable style={styles.backLink} onPress={() => setSetupStep(setupStep - 1)}>
-                            <Text style={styles.backLinkText}>Go Back</Text>
-                        </Pressable>
-                    )}
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                        {/* Step 3: Age */}
+                        {setupStep === 3 && (
+                            <Animated.View entering={FadeIn.duration(400)}>
+                                <Text style={styles.setupTitle}>Your Age</Text>
+                                <View style={styles.ageGrid}>
+                                    {AGE_OPTIONS.map((age) => (
+                                        <Pressable
+                                            key={age}
+                                            style={[styles.ageOption, userAge === age && styles.ageOptionSelected]}
+                                            onPress={() => handleAgeSelect(age)}
+                                        >
+                                            <Text style={[styles.ageText, userAge === age && styles.ageTextSelected]}>{age}</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            </Animated.View>
+                        )}
+
+                        {/* Step 4: Avatar Selection */}
+                        {setupStep === 4 && (
+                            <Animated.View entering={FadeIn.duration(400)}>
+                                <Text style={styles.setupTitle}>Pick Avatar</Text>
+                                <View style={styles.avatarGrid}>
+                                    {AVATAR_OPTIONS.map((item) => (
+                                        <Pressable
+                                            key={item.seed}
+                                            style={[
+                                                styles.avatarOption,
+                                                { backgroundColor: item.bg },
+                                                selectedAvatar === item.seed && styles.avatarOptionSelected,
+                                            ]}
+                                            onPress={() => handleAvatarSelect(item.seed)}
+                                        >
+                                            <Image
+                                                source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${item.seed}&backgroundColor=${item.bg.replace('#', '')}` }}
+                                                style={styles.avatarImgSmall}
+                                            />
+                                            {selectedAvatar === item.seed && (
+                                                <View style={styles.checkmark}>
+                                                    <Ionicons name="checkmark-circle" size={24} color="#58CC02" />
+                                                </View>
+                                            )}
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            </Animated.View>
+                        )}
+
+                        {/* Step 5: Summary */}
+                        {setupStep === 5 && (
+                            <Animated.View entering={FadeIn.duration(400)}>
+                                <View style={styles.summaryCard}>
+                                    <View style={styles.bigAvatar}>
+                                        <Image
+                                            source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${selectedAvatar}&backgroundColor=${AVATAR_OPTIONS.find(a => a.seed === selectedAvatar)?.bg.replace('#', '')}` }}
+                                            style={styles.bigAvatarImg}
+                                        />
+                                    </View>
+                                    <Text style={styles.summaryName}>{userName}</Text>
+                                    <Text style={styles.summaryAge}>Age: {userAge}</Text>
+                                </View>
+                            </Animated.View>
+                        )}
+
+                        {/* Action Button */}
+                        {setupStep > 0 && (
+                            <Pressable
+                                style={[
+                                    styles.setupNextBtn,
+                                    ((setupStep === 1 && (!email || !password)) ||
+                                        (setupStep === 2 && !userName) ||
+                                        (setupStep === 3 && !userAge)) && styles.nextButtonDisabled,
+                                ]}
+                                onPress={handleSetupNext}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <>
+                                        <Text style={styles.setupNextBtnText}>
+                                            {setupStep === 5 ? "Start Adventure!" :
+                                                setupStep === 1 && authMode === 'login' ? "Sign In" : "Continue"}
+                                        </Text>
+                                        <Ionicons name="arrow-forward" size={24} color="white" />
+                                    </>
+                                )}
+                            </Pressable>
+                        )}
+
+                        {setupStep > 1 && (
+                            <Pressable style={styles.backLink} onPress={() => setSetupStep(setupStep - 1)}>
+                                <Text style={styles.backLinkText}>Go Back</Text>
+                            </Pressable>
+                        )}
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </ScreenWrapper>
     );
 }
 

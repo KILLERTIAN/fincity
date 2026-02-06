@@ -1,3 +1,4 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -70,7 +71,7 @@ export default function LearnScreen() {
     }, 0);
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper>
             <StatusBar style="dark" />
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <ScrollView
@@ -294,14 +295,14 @@ export default function LearnScreen() {
                     <View style={{ height: 100 }} />
                 </ScrollView>
             </SafeAreaView>
-        </View>
+        </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FBFF',
+        backgroundColor: '#F0F9EB',
     },
     safeArea: {
         flex: 1,

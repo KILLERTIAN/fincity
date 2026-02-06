@@ -1,3 +1,4 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -33,130 +34,132 @@ export default function SavingsJourneyScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
+            <ScreenWrapper>
+                <StatusBar style="dark" />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.backButton,
-                        { opacity: pressed ? 0.6 : 1 }
-                    ]}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.back();
-                    }}
-                >
-                    <Ionicons name="chevron-back" size={28} color="#1F1F1F" />
-                </Pressable>
-                <Text style={styles.headerTitle}>Savings Journey</Text>
-                <Pressable style={styles.helpButton}>
-                    <Ionicons name="help-circle" size={28} color="#FFB800" />
-                </Pressable>
-            </View>
-
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                {/* Goal Card */}
-                <View style={styles.goalCard}>
-                    <View style={styles.levelBadge}>
-                        <Text style={styles.levelText}>LEVEL 4</Text>
-                    </View>
-
-                    <View style={styles.bikeIconCircle}>
-                        <Ionicons name="bicycle" size={56} color="#FFB800" />
-                    </View>
-
-                    <Text style={styles.goalTitle}>New Pro Bike</Text>
-                    <Text style={styles.goalSubtitle}>DREAM GOAL</Text>
-
-                    <View style={styles.activeBadge}>
-                        <Text style={styles.activeBadgeText}>ACTIVE</Text>
-                    </View>
-
-                    <View style={styles.amountRow}>
-                        <Text style={styles.currentAmount}>₹{currentSavings}</Text>
-                        <Text style={styles.goalAmountText}>/ ₹{goalAmount}</Text>
-                    </View>
-
-                    <View style={styles.percentBadge}>
-                        <Text style={styles.percentText}>{Math.round(progress)}%</Text>
-                    </View>
-
-                    <View style={styles.progressTrack}>
-                        <View style={[styles.progressFill, { width: `${progress}%` }]} />
-                    </View>
+                {/* Header */}
+                <View style={styles.header}>
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.backButton,
+                            { opacity: pressed ? 0.6 : 1 }
+                        ]}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.back();
+                        }}
+                    >
+                        <Ionicons name="chevron-back" size={28} color="#1F1F1F" />
+                    </Pressable>
+                    <Text style={styles.headerTitle}>Savings Journey</Text>
+                    <Pressable style={styles.helpButton}>
+                        <Ionicons name="help-circle" size={28} color="#FFB800" />
+                    </Pressable>
                 </View>
 
-                {/* Level Map */}
-                <Text style={styles.sectionTitle}>Level Map</Text>
-                <Text style={styles.sectionSubtitle}>Climb the mountain to reach your goal!</Text>
+                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                    {/* Goal Card */}
+                    <View style={styles.goalCard}>
+                        <View style={styles.levelBadge}>
+                            <Text style={styles.levelText}>LEVEL 4</Text>
+                        </View>
 
-                <View style={styles.milestonesContainer}>
-                    {MILESTONES.map((milestone) => (
-                        <View key={milestone.id} style={styles.milestoneRow}>
-                            <View style={[
-                                styles.milestoneIconCircle,
-                                milestone.status === 'locked' && styles.milestoneIconLocked,
-                                milestone.status === 'next' && styles.milestoneIconNext,
-                                milestone.status === 'earned' && styles.milestoneIconEarned,
-                            ]}>
-                                <Ionicons
-                                    name={milestone.icon as any}
-                                    size={24}
-                                    color="white"
-                                />
-                            </View>
-                            <View style={[
-                                styles.milestoneCard,
-                                milestone.status === 'next' && styles.milestoneCardNext,
-                            ]}>
-                                <View style={styles.milestoneContent}>
-                                    <Text style={styles.milestoneAmount}>₹{milestone.amount}: {milestone.title}</Text>
-                                    {milestone.status === 'next' && (
-                                        <Text style={styles.milestoneStatus}>NEXT UP</Text>
-                                    )}
-                                    {milestone.status === 'earned' && (
-                                        <Text style={styles.earnedText}>● EARNED</Text>
-                                    )}
-                                    {milestone.status === 'locked' && (
-                                        <Text style={styles.lockedText}>Final Boss</Text>
-                                    )}
+                        <View style={styles.bikeIconCircle}>
+                            <Ionicons name="bicycle" size={56} color="#FFB800" />
+                        </View>
+
+                        <Text style={styles.goalTitle}>New Pro Bike</Text>
+                        <Text style={styles.goalSubtitle}>DREAM GOAL</Text>
+
+                        <View style={styles.activeBadge}>
+                            <Text style={styles.activeBadgeText}>ACTIVE</Text>
+                        </View>
+
+                        <View style={styles.amountRow}>
+                            <Text style={styles.currentAmount}>₹{currentSavings}</Text>
+                            <Text style={styles.goalAmountText}>/ ₹{goalAmount}</Text>
+                        </View>
+
+                        <View style={styles.percentBadge}>
+                            <Text style={styles.percentText}>{Math.round(progress)}%</Text>
+                        </View>
+
+                        <View style={styles.progressTrack}>
+                            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                        </View>
+                    </View>
+
+                    {/* Level Map */}
+                    <Text style={styles.sectionTitle}>Level Map</Text>
+                    <Text style={styles.sectionSubtitle}>Climb the mountain to reach your goal!</Text>
+
+                    <View style={styles.milestonesContainer}>
+                        {MILESTONES.map((milestone) => (
+                            <View key={milestone.id} style={styles.milestoneRow}>
+                                <View style={[
+                                    styles.milestoneIconCircle,
+                                    milestone.status === 'locked' && styles.milestoneIconLocked,
+                                    milestone.status === 'next' && styles.milestoneIconNext,
+                                    milestone.status === 'earned' && styles.milestoneIconEarned,
+                                ]}>
+                                    <Ionicons
+                                        name={milestone.icon as any}
+                                        size={24}
+                                        color="white"
+                                    />
+                                </View>
+                                <View style={[
+                                    styles.milestoneCard,
+                                    milestone.status === 'next' && styles.milestoneCardNext,
+                                ]}>
+                                    <View style={styles.milestoneContent}>
+                                        <Text style={styles.milestoneAmount}>₹{milestone.amount}: {milestone.title}</Text>
+                                        {milestone.status === 'next' && (
+                                            <Text style={styles.milestoneStatus}>NEXT UP</Text>
+                                        )}
+                                        {milestone.status === 'earned' && (
+                                            <Text style={styles.earnedText}>● EARNED</Text>
+                                        )}
+                                        {milestone.status === 'locked' && (
+                                            <Text style={styles.lockedText}>Final Boss</Text>
+                                        )}
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                    ))}
-                </View>
+                        ))}
+                    </View>
 
-                {/* Milestone Rewards */}
-                <Text style={styles.sectionTitle}>Milestone Rewards</Text>
+                    {/* Milestone Rewards */}
+                    <Text style={styles.sectionTitle}>Milestone Rewards</Text>
 
-                <View style={styles.rewardsGrid}>
-                    {REWARDS.map((reward) => (
-                        <View key={reward.id} style={styles.rewardCard}>
-                            <View style={[styles.rewardIconBox, { backgroundColor: reward.color + '15' }]}>
-                                <Ionicons name={reward.icon as any} size={32} color={reward.color} />
+                    <View style={styles.rewardsGrid}>
+                        {REWARDS.map((reward) => (
+                            <View key={reward.id} style={styles.rewardCard}>
+                                <View style={[styles.rewardIconBox, { backgroundColor: reward.color + '15' }]}>
+                                    <Ionicons name={reward.icon as any} size={32} color={reward.color} />
+                                </View>
+                                <Text style={styles.rewardTitle}>{reward.title}</Text>
                             </View>
-                            <Text style={styles.rewardTitle}>{reward.title}</Text>
-                        </View>
-                    ))}
+                        ))}
+                    </View>
+
+                    <View style={{ height: 120 }} />
+                </ScrollView>
+
+                {/* Bottom Add Button */}
+                <View style={styles.bottomContainer}>
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.addButton,
+                            { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                        ]}
+                        onPress={handleAddSavings}
+                    >
+                        <Ionicons name="add-circle" size={24} color="white" />
+                        <Text style={styles.addButtonText}>ADD SAVINGS</Text>
+                    </Pressable>
                 </View>
-
-                <View style={{ height: 120 }} />
-            </ScrollView>
-
-            {/* Bottom Add Button */}
-            <View style={styles.bottomContainer}>
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.addButton,
-                        { transform: [{ scale: pressed ? 0.98 : 1 }] }
-                    ]}
-                    onPress={handleAddSavings}
-                >
-                    <Ionicons name="add-circle" size={24} color="white" />
-                    <Text style={styles.addButtonText}>ADD SAVINGS</Text>
-                </Pressable>
-            </View>
+            </ScreenWrapper>
         </View>
     );
 }

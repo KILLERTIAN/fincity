@@ -160,6 +160,32 @@ export const userApi = {
     addToSavings: async (goalId: string, amount: number) => {
         const response = await api.post(`/user/savings/${goalId}/add`, { amount });
         return response.data;
+    },
+
+    // Transfer money functions
+    searchUsers: async (query: string) => {
+        const response = await api.get(`/user/friends/search?query=${encodeURIComponent(query)}`);
+        return response.data;
+    },
+
+    getUserById: async (userId: string) => {
+        const response = await api.get(`/user/friends/${userId}`);
+        return response.data;
+    },
+
+    sendMoney: async (recipientId: string, amount: number, message?: string) => {
+        const response = await api.post('/user/transfer/send', { recipientId, amount, message });
+        return response.data;
+    },
+
+    requestMoney: async (recipientId: string, amount: number, message?: string) => {
+        const response = await api.post('/user/transfer/request', { recipientId, amount, message });
+        return response.data;
+    },
+
+    getTransferHistory: async (limit = 20, offset = 0) => {
+        const response = await api.get(`/user/transfer/history?limit=${limit}&offset=${offset}`);
+        return response.data;
     }
 };
 

@@ -1,3 +1,4 @@
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -19,7 +20,7 @@ const MISSIONS = [
         color: '#1CB0F6',
         bgColor: '#D8E5FF',
         change: 12.4,
-        price: 15.20,
+        price: 152.00,
         trend: [10, 12, 11, 14, 13, 15, 16, 15, 18, 17, 20]
     },
     {
@@ -29,7 +30,7 @@ const MISSIONS = [
         color: '#46A302',
         bgColor: '#E6F7D6',
         change: 4.2,
-        price: 8.50,
+        price: 85.00,
         trend: [8, 8.2, 8.1, 8.5, 8.4, 8.8, 8.9, 9.0, 9.2, 9.1, 9.3]
     },
     {
@@ -39,7 +40,7 @@ const MISSIONS = [
         color: '#FF4B4B',
         bgColor: '#FFE1E9',
         change: -2.1,
-        price: 5.40,
+        price: 54.00,
         trend: [6, 5.8, 5.9, 5.5, 5.7, 5.4, 5.2, 5.3, 5.0, 5.1, 4.9]
     },
 ];
@@ -78,14 +79,13 @@ export default function InvestScreen() {
 
     const handleInvest = (missionId: string) => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // TODO: Implement investment logic
+        router.push(`/stock-detail?id=${missionId}`);
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar style="dark" />
+        <ScreenWrapper>
             <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-
+                <StatusBar style="dark" />
                 {/* Header */}
                 <View style={styles.header}>
                     <Pressable
@@ -129,11 +129,16 @@ export default function InvestScreen() {
                         </View>
 
                         <View style={styles.heroIconBox}>
-                            <Ionicons name="rocket" size={32} color="white" />
+                            <Ionicons name="pie-chart" size={32} color="white" />
                         </View>
 
-                        <Text style={styles.heroLabel}>AVAILABLE TO INVEST</Text>
-                        <Text style={styles.heroAmount}>₹{(player.money * 0.4).toFixed(2)}</Text>
+                        <Text style={styles.heroLabel}>TOTAL PORTFOLIO VALUE</Text>
+                        <Text style={styles.heroAmount}>
+                            ₹{Object.entries(player.stocks).reduce((total, [id, holding]) => {
+                                const stock = MISSIONS.find(m => m.id === id);
+                                return total + (holding.quantity * (stock?.price || 0));
+                            }, 0).toFixed(2)}
+                        </Text>
                     </View>
 
                     {/* Missions List */}
@@ -154,7 +159,14 @@ export default function InvestScreen() {
                                 </View>
 
                                 <View style={styles.missionInfo}>
-                                    <Text style={styles.missionName}>{mission.name}</Text>
+                                    <View style={styles.missionNameRow}>
+                                        <Text style={styles.missionName}>{mission.name}</Text>
+                                        {player.stocks[mission.id] && (
+                                            <View style={styles.holdingBadge}>
+                                                <Text style={styles.holdingBadgeText}>HOLDING</Text>
+                                            </View>
+                                        )}
+                                    </View>
                                     <View style={styles.missionStats}>
                                         <Sparkline
                                             data={mission.trend}
@@ -164,6 +176,16 @@ export default function InvestScreen() {
                                             <Ionicons name={mission.change >= 0 ? 'trending-up' : 'trending-down'} size={12} />
                                             {' '}{Math.abs(mission.change)}%
                                         </Text>
+
+                                        {player.stocks[mission.id] && (
+                                            <Text style={[
+                                                styles.profitText,
+                                                { color: (mission.price - player.stocks[mission.id].avgPrice) >= 0 ? '#00C853' : '#FF5252' }
+                                            ]}>
+                                                {(mission.price - player.stocks[mission.id].avgPrice) >= 0 ? '▲' : '▼'}
+                                                ₹{Math.abs((mission.price - player.stocks[mission.id].avgPrice) * player.stocks[mission.id].quantity).toFixed(2)}
+                                            </Text>
+                                        )}
                                     </View>
                                 </View>
 
@@ -209,9 +231,8 @@ export default function InvestScreen() {
                         <Text style={styles.launchBtnText}>LAUNCH INVESTMENT</Text>
                     </Pressable>
                 </View>
-
             </SafeAreaView>
-        </View>
+        </ScreenWrapper>
     );
 }
 
@@ -358,11 +379,27 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
     },
+    missionNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+    },
     missionName: {
         fontSize: 18,
         fontWeight: '900',
         color: '#1F1F1F',
-        marginBottom: 8,
+    },
+    holdingBadge: {
+        backgroundColor: '#EBF5FF',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    holdingBadgeText: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: '#1CB0F6',
     },
     missionStats: {
         flexDirection: 'row',
@@ -372,6 +409,11 @@ const styles = StyleSheet.create({
     missionChange: {
         fontSize: 13,
         fontWeight: '900',
+    },
+    profitText: {
+        fontSize: 13,
+        fontWeight: '900',
+        marginLeft: 'auto',
     },
     investPlusBtn: {
         width: 44,

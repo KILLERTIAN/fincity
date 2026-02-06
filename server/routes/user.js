@@ -364,4 +364,188 @@ router.post('/savings/:goalId/add', authMiddleware, async (req, res) => {
     }
 });
 
+// ==================== TRANSFER MONEY ROUTES ====================
+
+// Search users by name or email
+router.get('/friends/search', authMiddleware, async (req, res) => {
+    try {
+        const { query } = req.query;
+
+        if (!query || query.length < 2) {
+            return res.status(400).json({ error: 'Search query must be at least 2 characters' });
+        }
+
+        const users = await User.findAll({
+            where: {
+                [require('sequelize').Op.and]: [
+                    {
+                        [require('sequelize').Op.or]: [
+                            { name: { [require('sequelize').Op.iLike]: `%${query}%` } },
+                            { email: { [require('sequelize').Op.iLike]: `%${query}%` } }
+                        ]
+                    },
+                    { id: { [require('sequelize').Op.ne]: req.userId } } // Exclude self
+                ]
+            },
+            attributes: ['id', 'name', 'avatar', 'level'],
+            limit: 10
+        });
+
+        res.json(users);
+    } catch (error) {
+        console.error('Search users error:', error);
+        res.status(500).json({ error: 'Failed to search users' });
+    }
+});
+
+// Get user by ID (for transfer recipient validation)
+router.get('/friends/:userId', authMiddleware, async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'name', 'avatar', 'level', 'trustScore']
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ error: 'Failed to get user' });
+    }
+});
+
+// Send money to another user
+router.post('/transfer/send', authMiddleware, async (req, res) => {
+    try {
+        const { recipientId, amount, message } = req.body;
+
+        if (!recipientId || !amount || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid transfer request' });
+        }
+
+        const sender = await User.findByPk(req.userId);
+        const recipient = await User.findByPk(recipientId);
+
+        if (!sender) {
+            return res.status(404).json({ error: 'Sender not found' });
+        }
+
+        if (!recipient) {
+            return res.status(404).json({ error: 'Recipient not found' });
+        }
+
+        if (sender.id === recipient.id) {
+            return res.status(400).json({ error: 'Cannot send money to yourself' });
+        }
+
+        if (parseFloat(sender.money) < amount) {
+            return res.status(400).json({ error: 'Insufficient funds' });
+        }
+
+        // Perform the transfer
+        await sender.update({ money: parseFloat(sender.money) - amount });
+        await recipient.update({ money: parseFloat(recipient.money) + amount });
+
+        // Record transactions for both users
+        const description = message || `Transfer to ${recipient.name}`;
+        const receiptDescription = message || `Transfer from ${sender.name}`;
+
+        await Transaction.create({
+            userId: sender.id,
+            type: 'transfer_out',
+            amount: -amount,
+            description,
+            metadata: JSON.stringify({ recipientId: recipient.id, recipientName: recipient.name })
+        });
+
+        await Transaction.create({
+            userId: recipient.id,
+            type: 'transfer_in',
+            amount: amount,
+            description: receiptDescription,
+            metadata: JSON.stringify({ senderId: sender.id, senderName: sender.name })
+        });
+
+        // Award XP for successful transfer
+        const xpGain = Math.min(Math.floor(amount * 0.01), 10);
+        await sender.update({ xp: sender.xp + xpGain });
+
+        res.json({
+            success: true,
+            message: `Successfully sent ₹${amount} to ${recipient.name}`,
+            newBalance: parseFloat(sender.money) - amount,
+            xpGained: xpGain,
+            recipient: {
+                id: recipient.id,
+                name: recipient.name,
+                avatar: recipient.avatar
+            }
+        });
+    } catch (error) {
+        console.error('Transfer send error:', error);
+        res.status(500).json({ error: 'Failed to send money' });
+    }
+});
+
+// Request money from another user
+router.post('/transfer/request', authMiddleware, async (req, res) => {
+    try {
+        const { recipientId, amount, message } = req.body;
+
+        if (!recipientId || !amount || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid request' });
+        }
+
+        const requester = await User.findByPk(req.userId);
+        const recipient = await User.findByPk(recipientId);
+
+        if (!requester || !recipient) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // In a real app, this would create a pending request
+        // For now, we just return success (simulated)
+        res.json({
+            success: true,
+            message: `Request sent to ${recipient.name} for ₹${amount}`,
+            recipient: {
+                id: recipient.id,
+                name: recipient.name,
+                avatar: recipient.avatar
+            }
+        });
+    } catch (error) {
+        console.error('Transfer request error:', error);
+        res.status(500).json({ error: 'Failed to send request' });
+    }
+});
+
+// Get transfer history
+router.get('/transfer/history', authMiddleware, async (req, res) => {
+    try {
+        const { limit = 20, offset = 0 } = req.query;
+
+        const transfers = await Transaction.findAll({
+            where: {
+                userId: req.userId,
+                type: {
+                    [require('sequelize').Op.in]: ['transfer_in', 'transfer_out']
+                }
+            },
+            order: [['createdAt', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        res.json(transfers);
+    } catch (error) {
+        console.error('Get transfer history error:', error);
+        res.status(500).json({ error: 'Failed to get transfer history' });
+    }
+});
+
 module.exports = router;

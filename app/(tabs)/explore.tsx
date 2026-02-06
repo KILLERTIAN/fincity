@@ -1,4 +1,6 @@
 import { GameCard } from '@/components/ui/game-card';
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
+import { TransferMoneyModal } from '@/components/ui/TransferMoneyModal';
 import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -6,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, Layout, SlideInRight } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -55,6 +57,11 @@ export default function SocialScreen() {
     const [friends, setFriends] = useState(ALL_FRIENDS);
     const [requests, setRequests] = useState(FRIEND_REQUESTS);
     const [suggested, setSuggested] = useState(SUGGESTED_FRIENDS);
+    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [selectedTransferFriend, setSelectedTransferFriend] = useState<any>(null);
+
+    const { width } = useWindowDimensions();
+    const isLargeScreen = width > 768;
 
     const onlineFriends = friends.filter(f => f.isOnline);
     const offlineFriends = friends.filter(f => !f.isOnline);
@@ -95,487 +102,498 @@ export default function SocialScreen() {
 
     const handleViewProfile = (friend: any) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        // Could navigate to a profile screen
-        Alert.alert(
-            friend.name,
-            `Level ${friend.level} • Trust Score: ${friend.trustScore || 'N/A'}`,
-            [
-                { text: 'Send Money', onPress: () => router.push('/send-cash') },
-                { text: 'Close', style: 'cancel' }
-            ]
-        );
+        setSelectedTransferFriend({
+            id: friend.id,
+            name: friend.name,
+            avatar: friend.avatar
+        });
+        setShowTransferModal(true);
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-            <StatusBar style="dark" />
+        <ScreenWrapper>
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+                <StatusBar style="dark" />
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                <View style={{ height: 10 }} />
+                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                    <View style={{ height: 10 }} />
 
-                {/* Header */}
-                <View style={styles.headerRow}>
-                    <Text style={styles.headerTitle}>Social Hub</Text>
-                    <View style={styles.headerActions}>
+                    {/* Header */}
+                    <View style={styles.headerRow}>
+                        <Text style={styles.headerTitle}>Social Hub</Text>
+                        <View style={styles.headerActions}>
+                            <Pressable
+                                style={({ pressed }) => [
+                                    styles.searchBtn,
+                                    { transform: [{ scale: pressed ? 0.92 : 1 }] }
+                                ]}
+                                onPress={() => setShowSearchModal(true)}
+                            >
+                                <Ionicons name="search" size={20} color="#1F1F1F" />
+                            </Pressable>
+                            <Pressable
+                                style={({ pressed }) => [
+                                    styles.addFriendBtn,
+                                    { transform: [{ scale: pressed ? 0.92 : 1 }] }
+                                ]}
+                                onPress={() => setActiveTab('discover')}
+                            >
+                                <Ionicons name="person-add" size={20} color="#1F1F1F" />
+                            </Pressable>
+                        </View>
+                    </View>
+
+                    {/* Karma Score Card */}
+                    <LinearGradient
+                        colors={['#FFB800', '#FF9600']}
+                        style={styles.karmaCard}
+                    >
+                        <View style={styles.karmaHeader}>
+                            <View>
+                                <Text style={styles.karmaLabel}>KARMA SCORE</Text>
+                                <Text style={styles.karmaValue}>850</Text>
+                            </View>
+                            <View style={styles.karmaTrend}>
+                                <Ionicons name="trending-up" size={16} color="#46A302" />
+                                <Text style={styles.karmaTrendText}>+25 this week</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.karmaTrack}>
+                            <View style={[styles.karmaFill, { width: '85%' }]} />
+                        </View>
+
+                        <View style={styles.karmaBottom}>
+                            <Text style={styles.karmaLevel}>Level 5: Generous Giant</Text>
+                            <Text style={styles.karmaNext}>Next: 1000</Text>
+                        </View>
+
+                        <Ionicons name="star" size={120} color="rgba(255,255,255,0.1)" style={styles.karmaBgIcon} />
+                    </LinearGradient>
+
+                    {/* Tab Bar */}
+                    <View style={styles.tabBar}>
                         <Pressable
-                            style={({ pressed }) => [
-                                styles.searchBtn,
-                                { transform: [{ scale: pressed ? 0.92 : 1 }] }
-                            ]}
-                            onPress={() => setShowSearchModal(true)}
+                            style={[styles.tab, activeTab === 'friends' && styles.tabActive]}
+                            onPress={() => setActiveTab('friends')}
                         >
-                            <Ionicons name="search" size={20} color="#1F1F1F" />
+                            <Ionicons
+                                name="people"
+                                size={20}
+                                color={activeTab === 'friends' ? '#1CB0F6' : '#8B8B8B'}
+                            />
+                            <Text style={[styles.tabText, activeTab === 'friends' && styles.tabTextActive]}>
+                                Friends
+                            </Text>
                         </Pressable>
                         <Pressable
-                            style={({ pressed }) => [
-                                styles.addFriendBtn,
-                                { transform: [{ scale: pressed ? 0.92 : 1 }] }
-                            ]}
+                            style={[styles.tab, activeTab === 'requests' && styles.tabActive]}
+                            onPress={() => setActiveTab('requests')}
+                        >
+                            <Ionicons
+                                name="mail"
+                                size={20}
+                                color={activeTab === 'requests' ? '#1CB0F6' : '#8B8B8B'}
+                            />
+                            <Text style={[styles.tabText, activeTab === 'requests' && styles.tabTextActive]}>
+                                Requests
+                            </Text>
+                            {requests.length > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{requests.length}</Text>
+                                </View>
+                            )}
+                        </Pressable>
+                        <Pressable
+                            style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
                             onPress={() => setActiveTab('discover')}
                         >
-                            <Ionicons name="person-add" size={20} color="#1F1F1F" />
+                            <Ionicons
+                                name="compass"
+                                size={20}
+                                color={activeTab === 'discover' ? '#1CB0F6' : '#8B8B8B'}
+                            />
+                            <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>
+                                Discover
+                            </Text>
                         </Pressable>
                     </View>
-                </View>
 
-                {/* Karma Score Card */}
-                <LinearGradient
-                    colors={['#FFB800', '#FF9600']}
-                    style={styles.karmaCard}
-                >
-                    <View style={styles.karmaHeader}>
-                        <View>
-                            <Text style={styles.karmaLabel}>KARMA SCORE</Text>
-                            <Text style={styles.karmaValue}>850</Text>
-                        </View>
-                        <View style={styles.karmaTrend}>
-                            <Ionicons name="trending-up" size={16} color="#46A302" />
-                            <Text style={styles.karmaTrendText}>+25 this week</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.karmaTrack}>
-                        <View style={[styles.karmaFill, { width: '85%' }]} />
-                    </View>
-
-                    <View style={styles.karmaBottom}>
-                        <Text style={styles.karmaLevel}>Level 5: Generous Giant</Text>
-                        <Text style={styles.karmaNext}>Next: 1000</Text>
-                    </View>
-
-                    <Ionicons name="star" size={120} color="rgba(255,255,255,0.1)" style={styles.karmaBgIcon} />
-                </LinearGradient>
-
-                {/* Tab Bar */}
-                <View style={styles.tabBar}>
-                    <Pressable
-                        style={[styles.tab, activeTab === 'friends' && styles.tabActive]}
-                        onPress={() => setActiveTab('friends')}
-                    >
-                        <Ionicons
-                            name="people"
-                            size={20}
-                            color={activeTab === 'friends' ? '#1CB0F6' : '#8B8B8B'}
-                        />
-                        <Text style={[styles.tabText, activeTab === 'friends' && styles.tabTextActive]}>
-                            Friends
-                        </Text>
-                    </Pressable>
-                    <Pressable
-                        style={[styles.tab, activeTab === 'requests' && styles.tabActive]}
-                        onPress={() => setActiveTab('requests')}
-                    >
-                        <Ionicons
-                            name="mail"
-                            size={20}
-                            color={activeTab === 'requests' ? '#1CB0F6' : '#8B8B8B'}
-                        />
-                        <Text style={[styles.tabText, activeTab === 'requests' && styles.tabTextActive]}>
-                            Requests
-                        </Text>
-                        {requests.length > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{requests.length}</Text>
+                    {/* Friends Tab Content */}
+                    {activeTab === 'friends' && (
+                        <Animated.View entering={FadeIn.duration(300)}>
+                            {/* Who needs a hand? */}
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Who needs a hand?</Text>
+                                <Pressable><Text style={styles.viewAllText}>View all</Text></Pressable>
                             </View>
-                        )}
-                    </Pressable>
-                    <Pressable
-                        style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
-                        onPress={() => setActiveTab('discover')}
-                    >
-                        <Ionicons
-                            name="compass"
-                            size={20}
-                            color={activeTab === 'discover' ? '#1CB0F6' : '#8B8B8B'}
-                        />
-                        <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>
-                            Discover
-                        </Text>
-                    </Pressable>
-                </View>
 
-                {/* Friends Tab Content */}
-                {activeTab === 'friends' && (
-                    <Animated.View entering={FadeIn.duration(300)}>
-                        {/* Who needs a hand? */}
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Who needs a hand?</Text>
-                            <Pressable><Text style={styles.viewAllText}>View all</Text></Pressable>
-                        </View>
-
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.friendsHorizontal}
-                            contentContainerStyle={styles.friendsContent}
-                        >
-                            {NEED_HELP.map((friend) => (
-                                <Pressable
-                                    key={friend.id}
-                                    style={styles.friendItem}
-                                    onPress={() => {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        router.push('/send-cash');
-                                    }}
-                                >
-                                    <View style={styles.friendAvatarBox}>
-                                        <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-                                        <View style={styles.reqAmountBadge}>
-                                            <Text style={styles.reqAmountText}>₹{friend.amount}</Text>
-                                        </View>
-                                    </View>
-                                    <Text style={styles.friendName}>{friend.name}</Text>
-                                </Pressable>
-                            ))}
-                            <Pressable style={styles.inviteBtn}>
-                                <View style={styles.inviteIconBox}>
-                                    <Ionicons name="add" size={32} color="#AFAFAF" />
-                                </View>
-                                <Text style={styles.inviteText}>Invite</Text>
-                            </Pressable>
-                        </ScrollView>
-
-                        {/* Online Friends */}
-                        {onlineFriends.length > 0 && (
-                            <>
-                                <View style={styles.sectionHeader}>
-                                    <View style={styles.sectionTitleRow}>
-                                        <View style={styles.onlineDot} />
-                                        <Text style={styles.sectionTitle}>Online Now ({onlineFriends.length})</Text>
-                                    </View>
-                                </View>
-
-                                {onlineFriends.map((friend, idx) => (
-                                    <Animated.View
-                                        key={friend.id}
-                                        entering={SlideInRight.delay(idx * 50)}
-                                    >
-                                        <Pressable
-                                            onPress={() => handleViewProfile(friend)}
-                                            style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-                                        >
-                                            <GameCard style={styles.friendCard}>
-                                                <View style={styles.friendCardLeft}>
-                                                    <View style={styles.friendAvatarContainer}>
-                                                        <Image source={{ uri: friend.avatar }} style={styles.friendCardAvatar} />
-                                                        <View style={styles.onlineIndicator} />
-                                                    </View>
-                                                    <View>
-                                                        <Text style={styles.friendCardName}>{friend.name}</Text>
-                                                        <Text style={styles.friendCardLevel}>Level {friend.level}</Text>
-                                                    </View>
-                                                </View>
-                                                <View style={styles.friendCardRight}>
-                                                    <View style={styles.trustBadge}>
-                                                        <Ionicons name="shield-checkmark" size={14} color="#58CC02" />
-                                                        <Text style={styles.trustText}>{friend.trustScore}</Text>
-                                                    </View>
-                                                    <Ionicons name="chevron-forward" size={20} color="#AFAFAF" />
-                                                </View>
-                                            </GameCard>
-                                        </Pressable>
-                                    </Animated.View>
-                                ))}
-                            </>
-                        )}
-
-                        {/* Offline Friends */}
-                        {offlineFriends.length > 0 && (
-                            <>
-                                <View style={styles.sectionHeader}>
-                                    <Text style={[styles.sectionTitle, { color: '#8B8B8B' }]}>
-                                        Offline ({offlineFriends.length})
-                                    </Text>
-                                </View>
-
-                                {offlineFriends.map((friend, idx) => (
-                                    <Animated.View
-                                        key={friend.id}
-                                        entering={SlideInRight.delay(idx * 50)}
-                                    >
-                                        <Pressable
-                                            onPress={() => handleViewProfile(friend)}
-                                            style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-                                        >
-                                            <GameCard style={[styles.friendCard, styles.offlineCard]}>
-                                                <View style={styles.friendCardLeft}>
-                                                    <View style={styles.friendAvatarContainer}>
-                                                        <Image
-                                                            source={{ uri: friend.avatar }}
-                                                            style={[styles.friendCardAvatar, styles.offlineAvatar]}
-                                                        />
-                                                    </View>
-                                                    <View>
-                                                        <Text style={[styles.friendCardName, styles.offlineName]}>{friend.name}</Text>
-                                                        <Text style={styles.friendCardLevel}>Last seen {friend.lastActive}</Text>
-                                                    </View>
-                                                </View>
-                                                <View style={styles.friendCardRight}>
-                                                    <View style={[styles.trustBadge, styles.offlineTrustBadge]}>
-                                                        <Ionicons name="shield-checkmark" size={14} color="#8B8B8B" />
-                                                        <Text style={[styles.trustText, { color: '#8B8B8B' }]}>{friend.trustScore}</Text>
-                                                    </View>
-                                                    <Ionicons name="chevron-forward" size={20} color="#AFAFAF" />
-                                                </View>
-                                            </GameCard>
-                                        </Pressable>
-                                    </Animated.View>
-                                ))}
-                            </>
-                        )}
-                    </Animated.View>
-                )}
-
-                {/* Requests Tab Content */}
-                {activeTab === 'requests' && (
-                    <Animated.View entering={FadeIn.duration(300)}>
-                        {requests.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <View style={styles.emptyIconBox}>
-                                    <Ionicons name="mail-open-outline" size={48} color="#AFAFAF" />
-                                </View>
-                                <Text style={styles.emptyTitle}>No Pending Requests</Text>
-                                <Text style={styles.emptySubtitle}>Friend requests will appear here</Text>
-                            </View>
-                        ) : (
-                            requests.map((request, idx) => (
-                                <Animated.View
-                                    key={request.id}
-                                    entering={SlideInRight.delay(idx * 100)}
-                                    layout={Layout.springify()}
-                                >
-                                    <GameCard style={styles.requestCard}>
-                                        <View style={styles.requestTop}>
-                                            <Image source={{ uri: request.avatar }} style={styles.requestAvatar} />
-                                            <View style={styles.requestInfo}>
-                                                <Text style={styles.requestName}>{request.name}</Text>
-                                                <Text style={styles.requestMeta}>
-                                                    Level {request.level} • {request.mutualFriends} mutual friends
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <View style={styles.requestActions}>
-                                            <Pressable
-                                                style={({ pressed }) => [
-                                                    styles.declineBtn,
-                                                    { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                                ]}
-                                                onPress={() => handleDeclineRequest(request.id)}
-                                            >
-                                                <Text style={styles.declineBtnText}>Decline</Text>
-                                            </Pressable>
-                                            <Pressable
-                                                style={({ pressed }) => [
-                                                    styles.acceptBtn,
-                                                    { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                                ]}
-                                                onPress={() => handleAcceptRequest(request.id)}
-                                            >
-                                                <Ionicons name="checkmark" size={18} color="white" />
-                                                <Text style={styles.acceptBtnText}>Accept</Text>
-                                            </Pressable>
-                                        </View>
-                                    </GameCard>
-                                </Animated.View>
-                            ))
-                        )}
-                    </Animated.View>
-                )}
-
-                {/* Discover Tab Content */}
-                {activeTab === 'discover' && (
-                    <Animated.View entering={FadeIn.duration(300)}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Suggested For You</Text>
-                        </View>
-
-                        {suggested.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <View style={styles.emptyIconBox}>
-                                    <Ionicons name="people-outline" size={48} color="#AFAFAF" />
-                                </View>
-                                <Text style={styles.emptyTitle}>No Suggestions</Text>
-                                <Text style={styles.emptySubtitle}>Check back later for new people to connect with</Text>
-                            </View>
-                        ) : (
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
-                                style={styles.suggestedHorizontal}
-                                contentContainerStyle={styles.suggestedContent}
+                                style={styles.friendsHorizontal}
+                                contentContainerStyle={styles.friendsContent}
                             >
-                                {suggested.map((person, idx) => (
-                                    <Animated.View
-                                        key={person.id}
-                                        entering={FadeInDown.delay(idx * 100)}
-                                    >
-                                        <View style={styles.suggestedCardCompact}>
-                                            <Image source={{ uri: person.avatar }} style={styles.suggestedAvatarCompact} />
-                                            <Text style={styles.suggestedNameCompact} numberOfLines={1}>{person.name}</Text>
-                                            <Text style={styles.suggestedMetaCompact}>Level {person.level}</Text>
-                                            <Text style={styles.mutualText}>{person.mutualFriends} mutual</Text>
-                                            <Pressable
-                                                style={({ pressed }) => [
-                                                    styles.addBtnCompact,
-                                                    { transform: [{ scale: pressed ? 0.9 : 1 }] }
-                                                ]}
-                                                onPress={() => handleAddSuggested(person.id)}
-                                            >
-                                                <Ionicons name="person-add" size={16} color="white" />
-                                                <Text style={styles.addBtnText}>Add</Text>
-                                            </Pressable>
-                                        </View>
-                                    </Animated.View>
-                                ))}
-                            </ScrollView>
-                        )}
-
-                        {/* Invite Friends */}
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Invite Friends</Text>
-                        </View>
-
-                        <GameCard style={styles.inviteCard}>
-                            <View style={styles.inviteCardIcon}>
-                                <Ionicons name="share-social" size={32} color="#1CB0F6" />
-                            </View>
-                            <View style={styles.inviteCardContent}>
-                                <Text style={styles.inviteCardTitle}>Share FinCity</Text>
-                                <Text style={styles.inviteCardDesc}>Invite friends and both earn 50 gems!</Text>
-                            </View>
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.shareBtn,
-                                    { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                ]}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                    Alert.alert('Share', 'Share functionality coming soon!');
-                                }}
-                            >
-                                <Text style={styles.shareBtnText}>Share</Text>
-                            </Pressable>
-                        </GameCard>
-                    </Animated.View>
-                )}
-
-                <View style={styles.bottomSpacing} />
-            </ScrollView>
-
-            {/* Ask For Help FAB */}
-            <Pressable
-                style={({ pressed }) => [
-                    styles.fab,
-                    { transform: [{ scale: pressed ? 0.9 : 1 }] }
-                ]}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    router.push('/ask-help');
-                }}
-            >
-                <View style={[styles.fabBorder, { backgroundColor: '#B8FF66' }]}>
-                    <View style={styles.fabIconRow}>
-                        <Ionicons name="hand-left" size={24} color="#1F1F1F" />
-                        <Text style={styles.fabText}>ASK FOR HELP</Text>
-                    </View>
-                </View>
-            </Pressable>
-
-            {/* Search Modal */}
-            <Modal
-                visible={showSearchModal}
-                animationType="slide"
-                transparent
-                onRequestClose={() => setShowSearchModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.searchModal}>
-                        <View style={styles.searchHeader}>
-                            <View style={styles.searchInputContainer}>
-                                <Ionicons name="search" size={20} color="#8B8B8B" />
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Search friends..."
-                                    placeholderTextColor="#AFAFAF"
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                    autoFocus
-                                />
-                                {searchQuery.length > 0 && (
-                                    <Pressable onPress={() => setSearchQuery('')}>
-                                        <Ionicons name="close-circle" size={20} color="#AFAFAF" />
-                                    </Pressable>
-                                )}
-                            </View>
-                            <Pressable
-                                style={styles.cancelBtn}
-                                onPress={() => {
-                                    setSearchQuery('');
-                                    setShowSearchModal(false);
-                                }}
-                            >
-                                <Text style={styles.cancelBtnText}>Cancel</Text>
-                            </Pressable>
-                        </View>
-
-                        <ScrollView style={styles.searchResults}>
-                            {filteredFriends.length === 0 ? (
-                                <View style={styles.noResults}>
-                                    <Text style={styles.noResultsText}>No friends found</Text>
-                                </View>
-                            ) : (
-                                filteredFriends.map(friend => (
+                                {NEED_HELP.map((friend) => (
                                     <Pressable
                                         key={friend.id}
-                                        style={styles.searchResultItem}
+                                        style={styles.friendItem}
                                         onPress={() => {
-                                            setShowSearchModal(false);
-                                            handleViewProfile(friend);
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            router.push('/send-cash');
                                         }}
                                     >
-                                        <Image source={{ uri: friend.avatar }} style={styles.searchResultAvatar} />
-                                        <View style={styles.searchResultInfo}>
-                                            <Text style={styles.searchResultName}>{friend.name}</Text>
-                                            <Text style={styles.searchResultMeta}>
-                                                Level {friend.level} • {friend.isOnline ? 'Online' : `Last seen ${friend.lastActive}`}
-                                            </Text>
+                                        <View style={styles.friendAvatarBox}>
+                                            <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                                            <View style={styles.reqAmountBadge}>
+                                                <Text style={styles.reqAmountText}>₹{friend.amount}</Text>
+                                            </View>
                                         </View>
-                                        {friend.isOnline && <View style={styles.searchOnlineDot} />}
+                                        <Text style={styles.friendName}>{friend.name}</Text>
                                     </Pressable>
+                                ))}
+                                <Pressable style={styles.inviteBtn}>
+                                    <View style={styles.inviteIconBox}>
+                                        <Ionicons name="add" size={32} color="#AFAFAF" />
+                                    </View>
+                                    <Text style={styles.inviteText}>Invite</Text>
+                                </Pressable>
+                            </ScrollView>
+
+                            {/* Online Friends */}
+                            {onlineFriends.length > 0 && (
+                                <>
+                                    <View style={styles.sectionHeader}>
+                                        <View style={styles.sectionTitleRow}>
+                                            <View style={styles.onlineDot} />
+                                            <Text style={styles.sectionTitle}>Online Now ({onlineFriends.length})</Text>
+                                        </View>
+                                    </View>
+
+                                    {onlineFriends.map((friend, idx) => (
+                                        <Animated.View
+                                            key={friend.id}
+                                            entering={SlideInRight.delay(idx * 50)}
+                                        >
+                                            <Pressable
+                                                onPress={() => handleViewProfile(friend)}
+                                                style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+                                            >
+                                                <GameCard style={styles.friendCard}>
+                                                    <View style={styles.friendCardLeft}>
+                                                        <View style={styles.friendAvatarContainer}>
+                                                            <Image source={{ uri: friend.avatar }} style={styles.friendCardAvatar} />
+                                                            <View style={styles.onlineIndicator} />
+                                                        </View>
+                                                        <View>
+                                                            <Text style={styles.friendCardName}>{friend.name}</Text>
+                                                            <Text style={styles.friendCardLevel}>Level {friend.level}</Text>
+                                                        </View>
+                                                    </View>
+                                                    <View style={styles.friendCardRight}>
+                                                        <View style={styles.trustBadge}>
+                                                            <Ionicons name="shield-checkmark" size={14} color="#58CC02" />
+                                                            <Text style={styles.trustText}>{friend.trustScore}</Text>
+                                                        </View>
+                                                        <Ionicons name="chevron-forward" size={20} color="#AFAFAF" />
+                                                    </View>
+                                                </GameCard>
+                                            </Pressable>
+                                        </Animated.View>
+                                    ))}
+                                </>
+                            )}
+
+                            {/* Offline Friends */}
+                            {offlineFriends.length > 0 && (
+                                <>
+                                    <View style={styles.sectionHeader}>
+                                        <Text style={[styles.sectionTitle, { color: '#8B8B8B' }]}>
+                                            Offline ({offlineFriends.length})
+                                        </Text>
+                                    </View>
+
+                                    {offlineFriends.map((friend, idx) => (
+                                        <Animated.View
+                                            key={friend.id}
+                                            entering={SlideInRight.delay(idx * 50)}
+                                        >
+                                            <Pressable
+                                                onPress={() => handleViewProfile(friend)}
+                                                style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+                                            >
+                                                <GameCard style={[styles.friendCard, styles.offlineCard]}>
+                                                    <View style={styles.friendCardLeft}>
+                                                        <View style={styles.friendAvatarContainer}>
+                                                            <Image
+                                                                source={{ uri: friend.avatar }}
+                                                                style={[styles.friendCardAvatar, styles.offlineAvatar]}
+                                                            />
+                                                        </View>
+                                                        <View>
+                                                            <Text style={[styles.friendCardName, styles.offlineName]}>{friend.name}</Text>
+                                                            <Text style={styles.friendCardLevel}>Last seen {friend.lastActive}</Text>
+                                                        </View>
+                                                    </View>
+                                                    <View style={styles.friendCardRight}>
+                                                        <View style={[styles.trustBadge, styles.offlineTrustBadge]}>
+                                                            <Ionicons name="shield-checkmark" size={14} color="#8B8B8B" />
+                                                            <Text style={[styles.trustText, { color: '#8B8B8B' }]}>{friend.trustScore}</Text>
+                                                        </View>
+                                                        <Ionicons name="chevron-forward" size={20} color="#AFAFAF" />
+                                                    </View>
+                                                </GameCard>
+                                            </Pressable>
+                                        </Animated.View>
+                                    ))}
+                                </>
+                            )}
+                        </Animated.View>
+                    )}
+
+                    {/* Requests Tab Content */}
+                    {activeTab === 'requests' && (
+                        <Animated.View entering={FadeIn.duration(300)}>
+                            {requests.length === 0 ? (
+                                <View style={styles.emptyState}>
+                                    <View style={styles.emptyIconBox}>
+                                        <Ionicons name="mail-open-outline" size={48} color="#AFAFAF" />
+                                    </View>
+                                    <Text style={styles.emptyTitle}>No Pending Requests</Text>
+                                    <Text style={styles.emptySubtitle}>Friend requests will appear here</Text>
+                                </View>
+                            ) : (
+                                requests.map((request, idx) => (
+                                    <Animated.View
+                                        key={request.id}
+                                        entering={SlideInRight.delay(idx * 100)}
+                                        layout={Layout.springify()}
+                                    >
+                                        <GameCard style={styles.requestCard}>
+                                            <View style={styles.requestTop}>
+                                                <Image source={{ uri: request.avatar }} style={styles.requestAvatar} />
+                                                <View style={styles.requestInfo}>
+                                                    <Text style={styles.requestName}>{request.name}</Text>
+                                                    <Text style={styles.requestMeta}>
+                                                        Level {request.level} • {request.mutualFriends} mutual friends
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.requestActions}>
+                                                <Pressable
+                                                    style={({ pressed }) => [
+                                                        styles.declineBtn,
+                                                        { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                                    ]}
+                                                    onPress={() => handleDeclineRequest(request.id)}
+                                                >
+                                                    <Text style={styles.declineBtnText}>Decline</Text>
+                                                </Pressable>
+                                                <Pressable
+                                                    style={({ pressed }) => [
+                                                        styles.acceptBtn,
+                                                        { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                                    ]}
+                                                    onPress={() => handleAcceptRequest(request.id)}
+                                                >
+                                                    <Ionicons name="checkmark" size={18} color="white" />
+                                                    <Text style={styles.acceptBtnText}>Accept</Text>
+                                                </Pressable>
+                                            </View>
+                                        </GameCard>
+                                    </Animated.View>
                                 ))
                             )}
-                        </ScrollView>
+                        </Animated.View>
+                    )}
+
+                    {/* Discover Tab Content */}
+                    {activeTab === 'discover' && (
+                        <Animated.View entering={FadeIn.duration(300)}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Suggested For You</Text>
+                            </View>
+
+                            {suggested.length === 0 ? (
+                                <View style={styles.emptyState}>
+                                    <View style={styles.emptyIconBox}>
+                                        <Ionicons name="people-outline" size={48} color="#AFAFAF" />
+                                    </View>
+                                    <Text style={styles.emptyTitle}>No Suggestions</Text>
+                                    <Text style={styles.emptySubtitle}>Check back later for new people to connect with</Text>
+                                </View>
+                            ) : (
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={styles.suggestedHorizontal}
+                                    contentContainerStyle={styles.suggestedContent}
+                                >
+                                    {suggested.map((person, idx) => (
+                                        <Animated.View
+                                            key={person.id}
+                                            entering={FadeInDown.delay(idx * 100)}
+                                        >
+                                            <View style={styles.suggestedCardCompact}>
+                                                <Image source={{ uri: person.avatar }} style={styles.suggestedAvatarCompact} />
+                                                <Text style={styles.suggestedNameCompact} numberOfLines={1}>{person.name}</Text>
+                                                <Text style={styles.suggestedMetaCompact}>Level {person.level}</Text>
+                                                <Text style={styles.mutualText}>{person.mutualFriends} mutual</Text>
+                                                <Pressable
+                                                    style={({ pressed }) => [
+                                                        styles.addBtnCompact,
+                                                        { transform: [{ scale: pressed ? 0.9 : 1 }] }
+                                                    ]}
+                                                    onPress={() => handleAddSuggested(person.id)}
+                                                >
+                                                    <Ionicons name="person-add" size={16} color="white" />
+                                                    <Text style={styles.addBtnText}>Add</Text>
+                                                </Pressable>
+                                            </View>
+                                        </Animated.View>
+                                    ))}
+                                </ScrollView>
+                            )}
+
+                            {/* Invite Friends */}
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Invite Friends</Text>
+                            </View>
+
+                            <GameCard style={styles.inviteCard}>
+                                <View style={styles.inviteCardIcon}>
+                                    <Ionicons name="share-social" size={32} color="#1CB0F6" />
+                                </View>
+                                <View style={styles.inviteCardContent}>
+                                    <Text style={styles.inviteCardTitle}>Share FinCity</Text>
+                                    <Text style={styles.inviteCardDesc}>Invite friends and both earn 50 gems!</Text>
+                                </View>
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.shareBtn,
+                                        { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                    ]}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                        Alert.alert('Share', 'Share functionality coming soon!');
+                                    }}
+                                >
+                                    <Text style={styles.shareBtnText}>Share</Text>
+                                </Pressable>
+                            </GameCard>
+                        </Animated.View>
+                    )}
+
+                    <View style={styles.bottomSpacing} />
+                </ScrollView>
+
+                {/* Ask For Help FAB */}
+                <Pressable
+                    style={({ pressed }) => [
+                        styles.fab,
+                        { transform: [{ scale: pressed ? 0.9 : 1 }] }
+                    ]}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        router.push('/ask-help');
+                    }}
+                >
+                    <View style={[styles.fabBorder, { backgroundColor: '#B8FF66' }]}>
+                        <View style={styles.fabIconRow}>
+                            <Ionicons name="hand-left" size={24} color="#1F1F1F" />
+                            <Text style={styles.fabText}>ASK FOR HELP</Text>
+                        </View>
                     </View>
-                </View>
-            </Modal>
-        </SafeAreaView>
+                </Pressable>
+
+                {/* Search Modal */}
+                <Modal
+                    visible={showSearchModal}
+                    animationType="slide"
+                    transparent
+                    onRequestClose={() => setShowSearchModal(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.searchModal}>
+                            <View style={styles.searchHeader}>
+                                <View style={styles.searchInputContainer}>
+                                    <Ionicons name="search" size={20} color="#8B8B8B" />
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="Search friends..."
+                                        placeholderTextColor="#AFAFAF"
+                                        value={searchQuery}
+                                        onChangeText={setSearchQuery}
+                                        autoFocus
+                                    />
+                                    {searchQuery.length > 0 && (
+                                        <Pressable onPress={() => setSearchQuery('')}>
+                                            <Ionicons name="close-circle" size={20} color="#AFAFAF" />
+                                        </Pressable>
+                                    )}
+                                </View>
+                                <Pressable
+                                    style={styles.cancelBtn}
+                                    onPress={() => {
+                                        setSearchQuery('');
+                                        setShowSearchModal(false);
+                                    }}
+                                >
+                                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                                </Pressable>
+                            </View>
+
+                            <ScrollView style={styles.searchResults}>
+                                {filteredFriends.length === 0 ? (
+                                    <View style={styles.noResults}>
+                                        <Text style={styles.noResultsText}>No friends found</Text>
+                                    </View>
+                                ) : (
+                                    filteredFriends.map(friend => (
+                                        <Pressable
+                                            key={friend.id}
+                                            style={styles.searchResultItem}
+                                            onPress={() => {
+                                                setShowSearchModal(false);
+                                                handleViewProfile(friend);
+                                            }}
+                                        >
+                                            <Image source={{ uri: friend.avatar }} style={styles.searchResultAvatar} />
+                                            <View style={styles.searchResultInfo}>
+                                                <Text style={styles.searchResultName}>{friend.name}</Text>
+                                                <Text style={styles.searchResultMeta}>
+                                                    Level {friend.level} • {friend.isOnline ? 'Online' : `Last seen ${friend.lastActive}`}
+                                                </Text>
+                                            </View>
+                                            {friend.isOnline && <View style={styles.searchOnlineDot} />}
+                                        </Pressable>
+                                    ))
+                                )}
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
+
+                <TransferMoneyModal
+                    visible={showTransferModal}
+                    onClose={() => {
+                        setShowTransferModal(false);
+                        setSelectedTransferFriend(null);
+                    }}
+                    preSelectedFriend={selectedTransferFriend}
+                />
+            </SafeAreaView >
+        </ScreenWrapper >
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FBFF',
+        backgroundColor: '#F0F9EB',
+    },
+    safeArea: {
+        flex: 1,
     },
     scrollView: {
         flex: 1,

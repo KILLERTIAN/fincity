@@ -1,18 +1,12 @@
+import { CustomPopup } from '@/components/ui/CustomPopup';
+import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import {
-    Dimensions,
-    Image,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -26,10 +20,30 @@ const CATEGORIES = [
 
 export default function SendCashScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const insets = useSafeAreaInsets();
+    const { gameState, sendMoney } = useGame();
+    const { player, friends } = gameState;
+
+    const friendId = (params.id as string) || '1';
+    const friend = friends.find(f => f.id === friendId) || friends[0];
+
     const [amount, setAmount] = useState(25);
     const [selectedCategory, setSelectedCategory] = useState('pizza');
-    const maxAmount = 142.50;
+    const maxAmount = player.money;
+
+    const [popupVisible, setPopupVisible] = useState(false);
+    const [popupData, setPopupData] = useState<{
+        type: 'success' | 'error' | 'warning' | 'info';
+        title: string;
+        message: string;
+        onClose?: () => void;
+    }>({ type: 'info', title: '', message: '' });
+
+    const showPopup = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, onDone?: () => void) => {
+        setPopupData({ type, title, message, onClose: onDone });
+        setPopupVisible(true);
+    };
 
     return (
         <View style={styles.container}>
@@ -59,15 +73,14 @@ export default function SendCashScreen() {
                     <View style={styles.recipientSection}>
                         <View style={styles.avatarContainer}>
                             <View style={styles.avatarRing}>
-                                <Image
-                                    source={{ uri: 'https://api.dicebear.com/7.x/avataaars/png?seed=Leo' }}
-                                    style={styles.avatar}
-                                />
+                                <View style={[styles.avatarPlaceholder, { backgroundColor: '#F0F0F0' }]}>
+                                    <Text style={styles.avatarLetter}>{friend?.avatar || friend?.name[0]}</Text>
+                                </View>
                             </View>
-                            <View style={styles.onlineBadge} />
+                            {friend?.isOnline && <View style={styles.onlineBadge} />}
                         </View>
                         <Text style={styles.sendingToLabel}>SENDING TO</Text>
-                        <Text style={styles.recipientName}>Leo Dasher</Text>
+                        <Text style={styles.recipientName}>{friend?.name}</Text>
                     </View>
 
                     {/* Amount Card */}
@@ -83,8 +96,9 @@ export default function SendCashScreen() {
                                 maximumValue={maxAmount}
                                 value={amount}
                                 onValueChange={(val) => {
-                                    setAmount(val);
-                                    if (Math.floor(val) % 10 === 0) Haptics.selectionAsync();
+                                    const rounded = Math.round(val);
+                                    setAmount(rounded);
+                                    if (rounded % 10 === 0 && rounded !== amount) Haptics.selectionAsync();
                                 }}
                                 minimumTrackTintColor="#FFB800"
                                 maximumTrackTintColor="#F0F0F0"
@@ -146,16 +160,33 @@ export default function SendCashScreen() {
                 <Pressable
                     style={({ pressed }) => [
                         styles.sendButton,
-                        { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                        { transform: [{ scale: pressed ? 0.98 : 1 }], opacity: amount > maxAmount ? 0.5 : 1 }
                     ]}
+                    disabled={amount > maxAmount}
                     onPress={() => {
+                        const description = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Gift';
+                        sendMoney(friendId, amount, description);
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        showPopup("success", "Success", `Successfully sent ₹${amount.toFixed(2)} to ${friend.name}`, () => {
+                            router.back();
+                        });
                     }}
                 >
                     <Ionicons name="paper-plane" size={22} color="white" />
                     <Text style={styles.sendButtonText}>SEND ₹{amount.toFixed(2)}</Text>
                 </Pressable>
             </View>
+
+            <CustomPopup
+                visible={popupVisible}
+                onClose={() => {
+                    setPopupVisible(false);
+                    if (popupData.onClose) popupData.onClose();
+                }}
+                type={popupData.type}
+                title={popupData.title}
+                message={popupData.message}
+            />
         </View>
     );
 }
@@ -223,6 +254,18 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
+    },
+    avatarPlaceholder: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarLetter: {
+        fontSize: 40,
+        fontWeight: '900',
+        color: '#FFB800',
     },
     avatar: {
         width: '100%',

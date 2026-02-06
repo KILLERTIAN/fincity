@@ -1,3 +1,6 @@
+import { CustomPopup } from '@/components/ui/CustomPopup';
+import { ScreenWrapper } from '@/components/ui/ScreenWrapper';
+import { useGame } from '@/contexts/game-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -5,12 +8,11 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
     Dimensions,
-    Image,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,18 +20,28 @@ const { width } = Dimensions.get('window');
 
 const QUICK_AMOUNTS = [5, 10, 20];
 
-const FRIENDS = [
-    { id: 'leo', name: 'Leo', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=Leo', badge: 'BESTIE', color: '#FFB800' },
-    { id: 'mia', name: 'Mia', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=Mia', badge: null, color: '#CE82FF' },
-    { id: 'sam', name: 'Sam', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=Sam', badge: null, color: '#1CB0F6' },
-    { id: 'zoey', name: 'Zoey', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=Zoey', badge: null, color: '#FF6B35' },
-];
-
 export default function AskForHelpScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { gameState, requestLoanFromFriend, askFriendForHelp } = useGame();
+    const { friends } = gameState;
+
     const [amount, setAmount] = useState(15);
-    const [selectedFriends, setSelectedFriends] = useState<string[]>(['leo']);
+    const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+    const [requestType, setRequestType] = useState<'borrow' | 'gift'>('gift');
+
+    const [popupVisible, setPopupVisible] = useState(false);
+    const [popupData, setPopupData] = useState<{
+        type: 'success' | 'error' | 'warning' | 'info';
+        title: string;
+        message: string;
+        onClose?: () => void;
+    }>({ type: 'info', title: '', message: '' });
+
+    const showPopup = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, onDone?: () => void) => {
+        setPopupData({ type, title, message, onClose: onDone });
+        setPopupVisible(true);
+    };
 
     const toggleFriend = (friendId: string) => {
         if (selectedFriends.includes(friendId)) {
@@ -47,137 +59,182 @@ export default function AskForHelpScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
-            <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.headerBtn,
-                        { transform: [{ scale: pressed ? 0.9 : 1 }] }
-                    ]}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.back();
-                    }}
-                >
-                    <Ionicons name="chevron-back" size={24} color="#1F1F1F" />
-                </Pressable>
-                <Text style={styles.headerTitle}>Ask for Help</Text>
-                <Pressable style={styles.headerBtn}>
-                    <Ionicons name="information-circle" size={24} color="#1CB0F6" />
-                </Pressable>
-            </View>
-
-            <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                    {/* Message Bubble */}
-                    <View style={styles.messageBubble}>
-                        <Text style={styles.messageText}>
-                            Running low? Ask your squad for a boost!
-                        </Text>
-                    </View>
-
-                    {/* Crown Icon */}
-                    <View style={styles.crownContainer}>
-                        <View style={styles.crownCircle}>
-                            <Ionicons name="ribbon" size={50} color="white" />
-                        </View>
-                        <View style={styles.sparkle1}><Ionicons name="flash" size={24} color="#FFB800" /></View>
-                        <View style={styles.sparkle2}><Ionicons name="flash" size={24} color="#FFB800" /></View>
-                    </View>
-
-                    {/* Amount Card - Premium Style */}
-                    <View style={styles.amountCard}>
-                        <Text style={styles.amountLabel}>REQUEST AMOUNT</Text>
-                        <Text style={styles.amountDisplay}>₹{amount}</Text>
-
-                        {/* Quick Amount Buttons */}
-                        <View style={styles.quickAmounts}>
-                            {QUICK_AMOUNTS.map((quickAmount) => (
-                                <Pressable
-                                    key={quickAmount}
-                                    style={({ pressed }) => [
-                                        styles.quickAmountBtn,
-                                        { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                    ]}
-                                    onPress={() => adjustAmount(quickAmount)}
-                                >
-                                    <Text style={styles.quickAmountText}>+₹{quickAmount}</Text>
-                                </Pressable>
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* Select Squad */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Select Squad</Text>
-                        <Text style={styles.selectedCount}>{selectedFriends.length} Selected</Text>
-                    </View>
-
-                    <View style={styles.friendsGrid}>
-                        {FRIENDS.map((friend) => {
-                            const isSelected = selectedFriends.includes(friend.id);
-                            return (
-                                <Pressable
-                                    key={friend.id}
-                                    style={({ pressed }) => [
-                                        styles.friendCard,
-                                        isSelected && { borderColor: friend.color, borderWidth: 3 },
-                                        { transform: [{ scale: pressed ? 0.95 : 1 }] }
-                                    ]}
-                                    onPress={() => toggleFriend(friend.id)}
-                                >
-                                    {isSelected && (
-                                        <View style={[styles.checkBadge, { backgroundColor: friend.color }]}>
-                                            <Ionicons name="checkmark" size={16} color="white" />
-                                        </View>
-                                    )}
-                                    <View style={[styles.friendAvatarBox, { backgroundColor: friend.color + '20' }]}>
-                                        <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-                                    </View>
-                                    <Text style={styles.friendName}>{friend.name}</Text>
-                                    {friend.badge && (
-                                        <Text style={styles.friendBadge}>{friend.badge}</Text>
-                                    )}
-                                </Pressable>
-                            );
-                        })}
-
-                        {/* Invite Button */}
-                        <Pressable style={styles.inviteCard}>
-                            <View style={styles.inviteIconBox}>
-                                <Ionicons name="add" size={32} color="#8B8B8B" />
-                            </View>
-                            <Text style={styles.inviteText}>INVITE</Text>
-                        </Pressable>
-                    </View>
-
-                    <View style={{ height: 120 }} />
-                </ScrollView>
-            </SafeAreaView>
-
-            {/* Bottom Bar - Premium Style */}
-            <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 24 }]}>
-                <View style={styles.totalSection}>
-                    <Text style={styles.totalLabel}>TOTAL REQUEST</Text>
-                    <Text style={styles.totalAmount}>₹{amount.toFixed(2)}</Text>
+            <ScreenWrapper>
+                <StatusBar style="dark" />
+                <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.headerBtn,
+                            { transform: [{ scale: pressed ? 0.9 : 1 }] }
+                        ]}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.back();
+                        }}
+                    >
+                        <Ionicons name="chevron-back" size={24} color="#1F1F1F" />
+                    </Pressable>
+                    <Text style={styles.headerTitle}>Ask for Help</Text>
+                    <Pressable style={styles.headerBtn}>
+                        <Ionicons name="information-circle" size={24} color="#1CB0F6" />
+                    </Pressable>
                 </View>
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.sendButton,
-                        { transform: [{ scale: pressed ? 0.98 : 1 }] },
-                        selectedFriends.length === 0 && styles.sendButtonDisabled
-                    ]}
-                    onPress={() => {
-                        if (selectedFriends.length > 0) {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        }
+
+                <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+                    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                        {/* Message Bubble */}
+                        <View style={styles.messageBubble}>
+                            <Text style={styles.messageText}>
+                                Running low? Ask your squad for a boost!
+                            </Text>
+                        </View>
+
+                        {/* Request Type Toggle */}
+                        <View style={styles.typeToggle}>
+                            <Pressable
+                                style={[styles.typeBtn, requestType === 'gift' && styles.typeBtnActive]}
+                                onPress={() => setRequestType('gift')}
+                            >
+                                <Ionicons name="gift-outline" size={20} color={requestType === 'gift' ? 'white' : '#8B8B8B'} />
+                                <Text style={[styles.typeBtnText, requestType === 'gift' && styles.typeBtnTextActive]}>Gift</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.typeBtn, requestType === 'borrow' && styles.typeBtnActive]}
+                                onPress={() => setRequestType('borrow')}
+                            >
+                                <Ionicons name="time-outline" size={20} color={requestType === 'borrow' ? 'white' : '#8B8B8B'} />
+                                <Text style={[styles.typeBtnText, requestType === 'borrow' && styles.typeBtnTextActive]}>Borrow</Text>
+                            </Pressable>
+                        </View>
+
+                        {/* Crown Icon */}
+                        <View style={styles.crownContainer}>
+                            <View style={[styles.crownCircle, { backgroundColor: requestType === 'gift' ? '#FFB800' : '#1CB0F6' }]}>
+                                <Ionicons name={requestType === 'gift' ? 'ribbon' : 'wallet'} size={50} color="white" />
+                            </View>
+                            <View style={styles.sparkle1}><Ionicons name="flash" size={24} color="#FFB800" /></View>
+                            <View style={styles.sparkle2}><Ionicons name="flash" size={24} color="#FFB800" /></View>
+                        </View>
+
+                        {/* Amount Card - Premium Style */}
+                        <View style={styles.amountCard}>
+                            <Text style={styles.amountLabel}>REQUEST AMOUNT</Text>
+                            <Text style={styles.amountDisplay}>₹{amount}</Text>
+
+                            {/* Quick Amount Buttons */}
+                            <View style={styles.quickAmounts}>
+                                {QUICK_AMOUNTS.map((quickAmount) => (
+                                    <Pressable
+                                        key={quickAmount}
+                                        style={({ pressed }) => [
+                                            styles.quickAmountBtn,
+                                            { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                        ]}
+                                        onPress={() => adjustAmount(quickAmount)}
+                                    >
+                                        <Text style={styles.quickAmountText}>+₹{quickAmount}</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        </View>
+
+                        {/* Select Squad */}
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Select Squad</Text>
+                            <Text style={styles.selectedCount}>{selectedFriends.length} Selected</Text>
+                        </View>
+
+                        <View style={styles.friendsGrid}>
+                            {friends.map((friend) => {
+                                const isSelected = selectedFriends.includes(friend.id);
+                                const friendColor = '#FFB800'; // Default theme color
+                                return (
+                                    <Pressable
+                                        key={friend.id}
+                                        style={({ pressed }) => [
+                                            styles.friendCard,
+                                            isSelected && { borderColor: friendColor, borderWidth: 3 },
+                                            { transform: [{ scale: pressed ? 0.95 : 1 }] }
+                                        ]}
+                                        onPress={() => toggleFriend(friend.id)}
+                                    >
+                                        {isSelected && (
+                                            <View style={[styles.checkBadge, { backgroundColor: friendColor }]}>
+                                                <Ionicons name="checkmark" size={16} color="white" />
+                                            </View>
+                                        )}
+                                        <View style={[styles.friendAvatarBox, { backgroundColor: friendColor + '20' }]}>
+                                            <View style={styles.avatarPlaceholder}>
+                                                <Text style={styles.avatarLetter}>{friend.avatar || friend.name[0]}</Text>
+                                            </View>
+                                        </View>
+                                        <Text style={styles.friendName}>{friend.name}</Text>
+                                        <Text style={styles.friendBadge}>TRUST: {friend.trustScore}</Text>
+                                    </Pressable>
+                                );
+                            })}
+
+                            {/* Invite Button */}
+                            <Pressable style={styles.inviteCard}>
+                                <View style={styles.inviteIconBox}>
+                                    <Ionicons name="add" size={32} color="#8B8B8B" />
+                                </View>
+                                <Text style={styles.inviteText}>INVITE</Text>
+                            </Pressable>
+                        </View>
+
+                        <View style={{ height: 120 }} />
+                    </ScrollView>
+                </SafeAreaView>
+
+                {/* Bottom Bar - Premium Style */}
+                <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 24 }]}>
+                    <View style={styles.totalSection}>
+                        <Text style={styles.totalLabel}>TOTAL REQUEST</Text>
+                        <Text style={styles.totalAmount}>₹{amount.toFixed(2)}</Text>
+                    </View>
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.sendButton,
+                            { transform: [{ scale: pressed ? 0.98 : 1 }], backgroundColor: requestType === 'gift' ? '#FFB800' : '#1CB0F6' },
+                            selectedFriends.length === 0 && styles.sendButtonDisabled
+                        ]}
+                        onPress={() => {
+                            if (selectedFriends.length > 0) {
+                                selectedFriends.forEach(fid => {
+                                    if (requestType === 'gift') {
+                                        askFriendForHelp(fid, 'money');
+                                    } else {
+                                        requestLoanFromFriend(fid, amount);
+                                    }
+                                });
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                showPopup(
+                                    "success",
+                                    "Request Sent",
+                                    `You requested ₹${amount} from ${selectedFriends.length} friends.`,
+                                    () => router.back()
+                                );
+                            }
+                        }}
+                        disabled={selectedFriends.length === 0}
+                    >
+                        <Text style={styles.sendButtonText}>SEND REQUEST</Text>
+                        <Ionicons name="paper-plane" size={20} color="#1F1F1F" />
+                    </Pressable>
+                </View>
+
+                <CustomPopup
+                    visible={popupVisible}
+                    onClose={() => {
+                        setPopupVisible(false);
+                        if (popupData.onClose) popupData.onClose();
                     }}
-                    disabled={selectedFriends.length === 0}
-                >
-                    <Text style={styles.sendButtonText}>SEND</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#1F1F1F" />
-                </Pressable>
-            </View>
+                    type={popupData.type}
+                    title={popupData.title}
+                    message={popupData.message}
+                />
+            </ScreenWrapper>
         </View>
     );
 }
@@ -244,6 +301,35 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: '#1F1F1F',
         textAlign: 'center',
+    },
+    typeToggle: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 6,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+    },
+    typeBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 16,
+        gap: 8,
+    },
+    typeBtnActive: {
+        backgroundColor: '#1F1F1F',
+    },
+    typeBtnText: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#8B8B8B',
+    },
+    typeBtnTextActive: {
+        color: 'white',
     },
     crownContainer: {
         alignItems: 'center',
@@ -373,6 +459,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 14,
+    },
+    avatarPlaceholder: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+    },
+    avatarLetter: {
+        fontSize: 28,
+        fontWeight: '900',
+        color: '#FFB800',
     },
     friendAvatar: {
         width: 64,
